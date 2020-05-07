@@ -1,0 +1,1 @@
+ run sql select ST_NPoints(ST_GeomFromText(geos)) from st_npoints time is : 0.0001086418628692627s run sql select ST_NPoints(ST_GeomFromText(geos)) from st_npoints time is : 0.00012115335464477539s

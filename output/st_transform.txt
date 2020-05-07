@@ -1,0 +1,1 @@
+ run sql select ST_AsText(ST_Transform(ST_GeomFromText(geos), 'epsg:4326', 'epsg:3857')) from st_transform time is : 0.0001712636947631836s run sql select ST_AsText(ST_Transform(ST_GeomFromText(geos), 'epsg:4326', 'epsg:3857')) from st_transform time is : 0.00018239712715148926s

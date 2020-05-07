@@ -1,0 +1,1 @@
+ run sql select ST_AsText(ST_PolygonFromText(geos)) from st_polygon_from_text time is : 0.00016288495063781737s run sql select ST_AsText(ST_PolygonFromText(geos)) from st_polygon_from_text time is : 0.00016109800338745116s

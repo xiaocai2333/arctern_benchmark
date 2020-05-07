@@ -1,0 +1,10 @@
+spark:
+  master : yarn
+  deploy-module: cluster
+  executor-memory : 2G
+
+hadoop : hdfs://192.168.2.28
+
+file_path : /home/zc/work/arctern_benchmark/data/
+
+#Todo: what need?

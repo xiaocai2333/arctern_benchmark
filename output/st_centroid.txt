@@ -1,0 +1,1 @@
+ run sql select ST_AsText(ST_Centroid(ST_GeomFromText(geos))) from st_centroid time is : 0.00016707158088684083s run sql select ST_AsText(ST_Centroid(ST_GeomFromText(geos))) from st_centroid time is : 0.0001634840965270996s

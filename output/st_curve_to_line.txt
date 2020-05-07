@@ -1,0 +1,1 @@
+ run sql select ST_AsText(ST_CurveToLine(ST_GeomFromText(geos))) from st_curve_to_line time is : 0.0010545830726623536s run sql select ST_AsText(ST_CurveToLine(ST_GeomFromText(geos))) from st_curve_to_line time is : 0.0010609159469604492s

@@ -1,0 +1,1 @@
+ run sql select ST_AsText(ST_Envelope(ST_GeomFromText(geos))) from st_envelope time is : 0.00018427014350891113s run sql select ST_AsText(ST_Envelope(ST_GeomFromText(geos))) from st_envelope time is : 0.00018923664093017578s

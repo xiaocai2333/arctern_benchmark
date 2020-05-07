@@ -1,0 +1,1 @@
+ run sql select ST_Length(ST_GeomFromText(geos)) from st_length time is : 0.00020970821380615235s run sql select ST_Length(ST_GeomFromText(geos)) from st_length time is : 0.0001898353099822998s
