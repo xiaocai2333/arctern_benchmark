@@ -1,0 +1,1 @@
+ run sql select ST_AsText(ST_GeomFromWKT(geos)) from ST_GeomFromWKT time is : 0.00017173147201538086s run sql select ST_AsText(ST_GeomFromWKT(geos)) from ST_GeomFromWKT time is : 0.0001547205448150635s run sql select ST_AsText(ST_GeomFromWKT(geos)) from ST_GeomFromWKT time is : 0.00014587926864624023s

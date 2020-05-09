@@ -1,1 +1,6 @@
-gis_all/gis.json gis_all/gis.txt
+gis_all/st_area.py gis_all/st_area.txt
+gis_all/st_area.py gis_all/st_area.txt
+gis_all/st_area.py gis_all/st_area.txt
+gis_all/st_area.py gis_all/st_area.txt
+gis_all/st_area.py gis_all/st_area.txt
+gis_all/st_area.py gis_all/st_area.txt

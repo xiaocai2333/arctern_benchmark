@@ -14,10 +14,9 @@
 
 import argparse
 import json
-import yaml
 
-from runner.gis import single_col, st_point, double_col, st_polygon_from_envelope, st_geom_from_geojson
-from arctern_pyspark import register_funcs, union_aggr, envelope_aggr
+from spark.runner.gis import double_col, single_col, st_point, st_polygon_from_envelope, st_geom_from_geojson
+from arctern_pyspark import register_funcs
 from pyspark.sql import SparkSession
 
 
@@ -30,7 +29,7 @@ if __name__ == "__main__":
     if args.scheduler is not None:
         scheduler_file = args.scheduler[0]
     else:
-        scheduler_file = "scheduler/gis_only/gis_test.txt"
+        scheduler_file = "../scheduler/gis_only/gis_test.txt"
 
     spark_session = SparkSession \
         .builder \

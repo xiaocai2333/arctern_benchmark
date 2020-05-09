@@ -12,25 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from runner.gis import run_sql_and_statistical_time
+from spark.runner.gis import run_sql_and_statistical_time
 
 
-def run_single_col(spark, file_path, function_sql_list):
-    df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema("geos string").load(
+def run_st_point(spark, file_path, function_sql_list):
+    df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema("x double, y double").load(
         file_path).cache()
     for i in range(len(function_sql_list)):
         func_name = function_sql_list[i][0]
         sql = function_sql_list[i][1]
         df.createOrReplaceTempView(func_name)
-        run_sql_and_statistical_time.run_sql(spark, func_name, sql)
-
-        # Todo: run multi-sqls
+        if len(sql) == 1:
+            run_sql_and_statistical_time.run_sql(spark, func_name, sql)
 
     df.unpersist()
 
 
 def main(spark, csv_file_path, function_sql_list):
 
-    run_single_col(spark, csv_file_path, function_sql_list)
+    run_st_point(spark, csv_file_path, function_sql_list)
 
-    print("single col benchmark done!")
+    print("st_point benchmark done!")

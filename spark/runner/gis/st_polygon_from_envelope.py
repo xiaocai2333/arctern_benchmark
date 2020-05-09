@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from runner.gis import run_sql_and_statistical_time
+from spark.runner.gis import run_sql_and_statistical_time
 
 
-def run_st_geom_from_geojson(spark, file_path, function_sql_list):
-    df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema("geos string").load(
-        file_path).cache()
+def run_st_polygon_from_envelope(spark, file_path, function_sql_list):
+    df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
+        "min_x double, min_y double, max_x double, max_y double").load(file_path).cache()
     for i in range(len(function_sql_list)):
         func_name = function_sql_list[i][0]
         sql = function_sql_list[i][1]
@@ -30,6 +30,6 @@ def run_st_geom_from_geojson(spark, file_path, function_sql_list):
 
 def main(spark, csv_file_path, function_sql_list):
 
-    run_st_geom_from_geojson(spark, csv_file_path, function_sql_list)
+    run_st_polygon_from_envelope(spark, csv_file_path, function_sql_list)
 
-    print("st_geom_from_geojson benchmark done!")
+    print("run_st_polygon_from_envelope benchmark done!")

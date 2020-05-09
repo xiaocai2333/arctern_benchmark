@@ -15,7 +15,7 @@
 
 import subprocess
 import yaml
-
+from python import benchmark
 
 if __name__ == "__main__":
 
@@ -29,10 +29,13 @@ if __name__ == "__main__":
     deploy = conf["spark"]["deploy-module"]
     executor_memory = conf["spark"]["executor-memory"]
     hadoop = None
+    json_file = conf["json_file"]
     if hadoop is not None:
         shell = "spark-submit --master " + master + " --deploy-module " + deploy + \
                 " --executor-memory " + executor_memory + " arctern_benchmark.py"
     else:
-        shell = "spark-submit arctern_benchmark.py -s gis_only/gis_test.txt "
-    subprocess.Popen(shell, shell=True)
+        shell = "spark-submit ./spark/arctern_benchmark.py -s gis_only/gis_test.txt "
+    # subprocess.Popen(shell, shell=True)
+
+    benchmark.main(json_file)
 

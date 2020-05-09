@@ -5,6 +5,10 @@ spark:
 
 hadoop : hdfs://192.168.2.28
 
+json_file : test_case/gis_all/gis.json
+
 file_path : /home/zc/work/arctern_benchmark/data/
+
+
 
 #Todo: what need?
