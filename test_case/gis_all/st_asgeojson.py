@@ -15,9 +15,8 @@
 
 import arctern
 
-csv_path = "data/single_polygon.csv"
+csv_path = "data/st_geomfromgeojson.csv"
 col_num = 1
-schema = "geos string"
 
 
 def spark_test(spark, csv_path):
@@ -32,5 +31,5 @@ def spark_test(spark, csv_path):
 
 
 def python_test(data):
-    arctern.ST_Area(arctern.ST_GeomFromText(data))
-    print("st_area run done!")
+    arctern.ST_AsGeoJSON(arctern.ST_GeomFromGeoJSON(data))
+    print("st_as_geojson run done!")

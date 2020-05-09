@@ -15,22 +15,10 @@
 
 import arctern
 
-csv_path = "data/single_polygon.csv"
+csv_path = "data/single_col.csv"
 col_num = 1
-schema = "geos string"
 
 
-def spark_test(spark, csv_path):
-    data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
-        "geos string").load(csv_path).cache()
-    data_df.createOrReplaceTempView("st_area")
-    sql = "select ST_Area(ST_GeomFromText(data)) from data"
-    result_df = spark.sql(sql)
-    result_df.createOrReplaceTempView("result")
-    spark.sql("cache table result")
-    spark.sql("uncache table result")
-
-
-def python_test(data):
-    arctern.ST_Area(arctern.ST_GeomFromText(data))
-    print("st_area run done!")
+def run(data):
+    arctern.ST_IsValid(arctern.ST_GeomFromText(data))
+    print("st_isvalid run done!")
