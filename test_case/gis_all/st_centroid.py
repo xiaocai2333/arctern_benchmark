@@ -19,6 +19,20 @@ csv_path = "data/single_col.csv"
 col_num = 1
 
 
+sql = "select ST_AsText(ST_Centroid(ST_GeomFromText(geos))) from %s"
+
+
+def spark_test(spark, csv_path):
+    data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
+        "geos string").load(csv_path).cache()
+    data_df.createOrReplaceTempView("st_buffer")
+    sql = "select ST_AsText(ST_Buffer(ST_GeomFromText(geos), 1.2)) from st_buffer"
+    result_df = spark.sql(sql)
+    result_df.createOrReplaceTempView("result")
+    spark.sql("cache table result")
+    spark.sql("uncache table result")
+
+
 def run(data):
     arctern.ST_AsText(arctern.ST_Centroid(arctern.ST_GeomFromText(data)))
     print("st_centroid run done!")

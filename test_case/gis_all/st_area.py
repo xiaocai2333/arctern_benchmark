@@ -15,17 +15,19 @@
 
 import arctern
 
+func_name = "st_area"
 csv_path = "data/single_polygon.csv"
 col_num = 1
 schema = "geos string"
+
+sql = "select ST_Area(ST_GeomFromText(data)) from %s"
 
 
 def spark_test(spark, csv_path):
     data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
         "geos string").load(csv_path).cache()
-    data_df.createOrReplaceTempView("st_area")
-    sql = "select ST_Area(ST_GeomFromText(data)) from data"
-    result_df = spark.sql(sql)
+    data_df.createOrReplaceTempView(func_name)
+    result_df = spark.sql(sql % func_name)
     result_df.createOrReplaceTempView("result")
     spark.sql("cache table result")
     spark.sql("uncache table result")

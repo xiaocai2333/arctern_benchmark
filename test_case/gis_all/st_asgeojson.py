@@ -22,8 +22,8 @@ col_num = 1
 def spark_test(spark, csv_path):
     data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
         "geos string").load(csv_path).cache()
-    data_df.createOrReplaceTempView("st_area")
-    sql = "select ST_Area(ST_GeomFromText(data)) from data"
+    data_df.createOrReplaceTempView("st_geo_from_json")
+    sql = "select ST_AsGeoJSON(ST_PolygonFromText(data)) from st_geo_from_json"
     result_df = spark.sql(sql)
     result_df.createOrReplaceTempView("result")
     spark.sql("cache table result")
