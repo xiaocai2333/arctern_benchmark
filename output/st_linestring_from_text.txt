@@ -1,1 +1,0 @@
- run sql select ST_AsText(ST_LineStringFromText(geos)) from st_linestring_from_text time is : 0.00011731982231140136s run sql select ST_AsText(ST_LineStringFromText(geos)) from st_linestring_from_text time is : 0.00011376810073852539s

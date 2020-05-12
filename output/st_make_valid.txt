@@ -1,1 +1,0 @@
- run sql select ST_AsText(ST_MakeValid(ST_GeomFromText(geos))) from st_make_valid time is : 0.00016033029556274415s run sql select ST_AsText(ST_MakeValid(ST_GeomFromText(geos))) from st_make_valid time is : 0.00016210794448852538s

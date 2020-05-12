@@ -1,1 +1,0 @@
- run sql select ST_Area(ST_GeomFromText(geos)) from st_area time is : 0.0021103739738464354s run sql select ST_Area(ST_GeomFromText(geos)) from st_area time is : 0.002080789566040039s

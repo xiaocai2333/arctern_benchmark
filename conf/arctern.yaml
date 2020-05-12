@@ -1,4 +1,45 @@
+channels:
+- conda-forge
+- arctern-dev
 dependencies:
-  - libarctern=0.1.0=ae520101d84e76baf3978754e371b0a83a8d36b1*
-  - arctern=0.1.0=ae520101d84e76baf3978754e371b0a83a8d36b1*
-  - arctern-spark=0.1.0=ae520101d84e76baf3978754e371b0a83a8d36b1*
+- libarctern=0.1.0=ae520101d84e76baf3978754e371b0a83a8d36b1*
+- arctern=0.1.0=ae520101d84e76baf3978754e371b0a83a8d36b1*
+- arctern-spark=0.1.0=ae520101d84e76baf3978754e371b0a83a8d36b1*
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+- pyyaml
+name: arctern0.1.0-ae520101d84e76baf3978754e371b0a83a8d36b1

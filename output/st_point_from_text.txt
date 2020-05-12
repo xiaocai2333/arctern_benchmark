@@ -1,1 +1,0 @@
- run sql select ST_AsText(ST_PointFromText(geos)) from st_point_from_text time is : 0.0001064925193786621s run sql select ST_AsText(ST_PointFromText(geos)) from st_point_from_text time is : 0.00011152029037475586s

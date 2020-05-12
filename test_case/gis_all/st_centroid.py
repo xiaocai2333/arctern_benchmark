@@ -19,7 +19,7 @@ csv_path = "data/single_col.csv"
 col_num = 1
 
 
-sql = "select ST_AsText(ST_Centroid(ST_GeomFromText(geos))) from %s"
+sql = "select ST_AsText(ST_Centroid(ST_GeomFromText(%s))) from %s"
 
 
 def spark_test(spark, csv_path):

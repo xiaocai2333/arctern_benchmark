@@ -1,1 +1,0 @@
- run sql select ST_AsText(ST_Buffer(ST_GeomFromText(geos), 1.2)) from st_buffer time is : 0.002495753526687622s run sql select ST_AsText(ST_Buffer(ST_GeomFromText(geos), 1.2)) from st_buffer time is : 0.0024607594013214113s

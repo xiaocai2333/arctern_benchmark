@@ -13,56 +13,42 @@
 # limitations under the License.
 
 import argparse
-import json
-
-from spark.runner.gis import double_col, single_col, st_point, st_polygon_from_envelope, st_geom_from_geojson
-from arctern_pyspark import register_funcs
+import importlib
 from pyspark.sql import SparkSession
+from arctern_pyspark import register_funcs
 
 
-if __name__ == "__main__":
+def run_sql(spark, sql, func_name):
+    result_df = spark.sql(sql % func_name)
+    result_df.createOrReplaceTempView("result")
+    spark.sql("cache table result")
+    spark.sql("uncache table result")
+
+
+if __name__ == '__main__':
     parse = argparse.ArgumentParser()
-    parse.add_argument('-s, --scheduler', dest='scheduler', nargs=1, default=None)
+    parse.add_argument('-s --source_file', dest='source_file', nargs=1)
 
     args = parse.parse_args()
-
-    if args.scheduler is not None:
-        scheduler_file = args.scheduler[0]
-    else:
-        scheduler_file = "../scheduler/gis_only/gis_test.txt"
-
+    source_file = args.source_file[0]
+    user_module = importlib.import_module("test_case." + (source_file.split(".")[0]).replace("/", "."),
+                                          "test_case/" + source_file)
     spark_session = SparkSession \
         .builder \
-        .appName("arctern benchmark") \
+        .appName("Python Arrow-in-Spark example") \
         .getOrCreate()
-
     spark_session.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+
     register_funcs(spark_session)
 
-    with open("scheduler/" + scheduler_file, "r") as f:
-        line = f.readline()
-        json_file = line.split(" ")[0]
-        output_file = line.split(" ")[:-1]
-
-    with open("test_case/" + json_file, "r") as f:
-        bench_case = json.load(f)["gis_all"]
-
-    for case in bench_case:
-        csv_file_path = bench_case[case]["file_path"]
-        # if hadoop is not None:
-        #     csv_file_path = hadoop + "/" + csv_file_path
-
-        function_sql_list = bench_case[case]["funcs_sql"]
-        if case in ["single_col", "single_polygon", "single_point", "single_linestring", "st_curve_to_line"]:
-            single_col.main(spark_session, csv_file_path, function_sql_list)
-        elif case in ["double_col", "st_distance", "st_within"]:
-            double_col.main(spark_session, csv_file_path, function_sql_list)
-        elif case in ["st_point"]:
-            st_point.main(spark_session, csv_file_path, function_sql_list)
-        elif case in ["st_polygon_from_envelope"]:
-            st_polygon_from_envelope.main(spark_session, csv_file_path, function_sql_list)
-        elif case in ["st_geom_from_json"]:
-            st_geom_from_geojson.main(spark_session, csv_file_path, function_sql_list)
-
-    spark_session.stop()
-    # Todo: read path and func_list from file and run benchmark
+    if hasattr(user_module, "spark_test"):
+        user_module.spark_test(spark_session)
+    else:
+        data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
+            user_module.schema).load(user_module.csv_path).cache()
+        data_df.createOrReplaceTempView(user_module.func_name)
+        result_df = spark_session.sql(user_module.sql % (user_module.col_name, user_module.func_name))
+        result_df.createOrReplaceTempView("result")
+        spark_session.sql("cache table result")
+        spark_session.sql("uncache table result")
+        print(user_module.func_name + " spark test run done!")

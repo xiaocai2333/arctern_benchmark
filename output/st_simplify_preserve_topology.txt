@@ -1,1 +1,0 @@
- run sql select ST_AsText(ST_SimplifyPreserveTopology(ST_GeomFromText(geos), 10)) from st_simplify_preserve_topology time is : 0.00018489646911621092s run sql select ST_AsText(ST_SimplifyPreserveTopology(ST_GeomFromText(geos), 10)) from st_simplify_preserve_topology time is : 0.00021149516105651857s

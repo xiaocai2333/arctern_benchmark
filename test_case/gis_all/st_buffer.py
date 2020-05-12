@@ -17,11 +17,13 @@ import arctern
 
 csv_path = "data/single_point.csv"
 col_num = 1
+col_name = "geos"
+schema = "geos string"
 
 
-def spark_test(spark, csv_path):
+def spark_test(spark):
     data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
-        "geos string").load(csv_path).cache()
+        schema).load(csv_path).cache()
     data_df.createOrReplaceTempView("st_buffer")
     sql = "select ST_AsText(ST_Buffer(ST_GeomFromText(geos), 1.2)) from st_buffer"
     result_df = spark.sql(sql)
@@ -30,6 +32,6 @@ def spark_test(spark, csv_path):
     spark.sql("uncache table result")
 
 
-def run(data):
+def python_test(data):
     arctern.ST_AsText(arctern.ST_Buffer(arctern.ST_GeomFromText(data), 1.2))
     print("st_buffer run done!")

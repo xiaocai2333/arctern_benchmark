@@ -23,6 +23,34 @@ import sys
 import yaml
 
 
+def switch_conda_environment(conda_environment_file, args):
+    with open(conda_environment_file, "r") as env_f:
+        yaml_conf = yaml.safe_load(env_f)
+        dependencies = yaml_conf["dependencies"]
+        version = dependencies[0].split("=")[1]
+        commit_id = dependencies[0].split("=")[2].replace("*", "")
+
+    conda_env_name = "arctern" + version + "-" + commit_id
+    with open(conda_environment_file, "w") as env_f:
+        yaml_conf["name"] = conda_env_name
+        yaml_conf["channels"] = ["conda-forge", "arctern-dev"]
+        yaml_conf["dependencies"].append("pyyaml")
+        yaml.dump(yaml_conf, env_f)
+    status = os.system("conda env create -f " + conda_environment_file)
+
+    if status >= 0:
+        conda_prefix = os.popen("conda env export -n %s | grep prefix" % conda_env_name).read().split(" ")[-1].replace(
+            "\n", "")
+        exec_python_path = conda_prefix + "/bin/python"
+        for n, e in enumerate(sys.argv):
+            if e == "-w":
+                sys.argv[n + 1] = "False"
+        os.execlp(exec_python_path, "arctern test", *sys.argv)
+    else:
+        print("create conda environment failed!")
+        sys.exit(1)
+
+
 def data_proc(csv_path, col_num):
     if col_num == 1:
         data = []
@@ -55,53 +83,28 @@ def data_proc(csv_path, col_num):
         return pd.Series(x_min), pd.Series(y_min), pd.Series(x_max), pd.Series(y_max)
 
 
-def run_sql_once(spark, sql):
-    result_df = spark.sql(sql)
-    result_df.createOrReplaceTempView("result")
-    spark.sql("cache table result")
-    spark.sql("uncache table result")
-
-
-def spark_test(output_file, user_module):
-    from pyspark.sql import SparkSession
-    from arctern_pyspark import register_funcs
-    spark_session = SparkSession \
-        .builder \
-        .appName("Python Arrow-in-Spark example") \
-        .getOrCreate()
-    spark_session.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-    spark_session.conf.set("spark.executor.memory", "2g")
-
-    register_funcs(spark_session)
-
-    if hasattr(user_module, "spark_test"):
-        begin_time = time.time()
-        user_module.spark_test(spark_session)
-        end_time = time.time()
-    else:
-        data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
-            "geos string").load(user_module.csv_path).cache()
-        data_df.createOrReplaceTempView(user_module.func_name)
-        begin_time = time.time()
-        run_sql_once(spark_session, user_module.sql)
-        end_time = time.time()
-        print("run " + user_module + " time is:" + str(end_time-begin_time) + "s")
-
+def spark_test(output_file, user_module, source_file):
+    from spark import arctern_benchmark
+    begin_time = time.time()
+    os.system("spark-submit ./spark/arctern_benchmark.py -s %s" % source_file)
+    end_time = time.time()
     with open(output_file, "w") as out:
-        out.writelines("run " + user_module + " time is: " + str(end_time - begin_time) + "s")
+        out.writelines("run " + str(user_module) + " time is: " + str(end_time - begin_time) + "s")
 
 
 def python_test(output_file, user_module):
     begin_time = time.time()
     end_time = time.time()
 
+    if not hasattr(user_module, "python_test"):
+        print("Please write python_test function in your %s!" % str(user_module))
     if user_module.col_num == 1:
         if hasattr(user_module, "data_proc"):
             data = user_module.data_proc(user_module.csv_path, user_module.col_num)
         else:
             data = data_proc(user_module.csv_path, user_module.col_num)
         begin_time = time.time()
-        user_module.run(data)
+        user_module.python_test(data)
         end_time = time.time()
 
     elif user_module.col_num == 2:
@@ -110,7 +113,7 @@ def python_test(output_file, user_module):
         else:
             data1, data2 = data_proc(user_module.csv_path, user_module.col_num)
         begin_time = time.time()
-        user_module.run(data1, data2)
+        user_module.python_test(data1, data2)
         end_time = time.time()
 
     elif user_module.col_num == 4:
@@ -119,54 +122,14 @@ def python_test(output_file, user_module):
         else:
             x_min, y_min, x_max, y_max = data_proc(user_module.csv_path, user_module.col_num)
         begin_time = time.time()
-        user_module.run(x_min, y_min, x_max, y_max)
+        user_module.python_test(x_min, y_min, x_max, y_max)
         end_time = time.time()
 
     with open(output_file, "w") as out:
-        out.writelines("run " + user_module + " time is: " + str(end_time - begin_time) + "s")
+        out.writelines("run " + str(user_module) + " time is: " + str(end_time - begin_time) + "s")
 
 
-if __name__ == "__main__":
-    parse = argparse.ArgumentParser()
-    parse.add_argument('-f --file', dest='file', nargs=1, default=None)
-    # parse.add_argument('-l --last_version', dest='last_version', nargs='+')
-    # parse.add_argument('-c --current_version', dest='current_version', nargs='+')
-    parse.add_argument('-v --conda_env', dest='conda_env', nargs=1)
-    parse.add_argument('-p --python', dest="python", nargs='+')
-    parse.add_argument('-s --spark', dest="spark", nargs='+')
-
-    args = parse.parse_args()
-    scheduler_file = "scheduler/gis_only/gis_test.txt"
-    conda_env_file = "conf/arctern.yaml"
-    if args.file is not None:
-        scheduler_file = args.scheduler[0]
-
-    if args.conda_env is not None:
-        conda_env_file = args.conda_env[0]
-
-    with open(conda_env_file, "r") as env_f:
-        yaml_conf = yaml.load(env_f)
-        dependencies = yaml_conf["dependencies"]
-        version = dependencies[0].split("=")[1]
-        commit_id = dependencies[0].split("=")[2].replcae("*", "")
-
-    with open(conda_env_file, "w") as env_f:
-        yaml_conf["name"] = "arctern" + version + "-" + commit_id
-        yaml_conf["channels"] = ["conda-forge", "arctern-dev"]
-        yaml.dump(yaml_conf, env_f)
-    os.system("conda env create -f " + conda_env_file)
-
-    # Todo: create conda environment by yaml
-    # Todo: read arctern version by web and write conda yaml
-
-    output_path = "./output/0.1.0/"
-    if args.arctern_version is None:
-        print("Please input artern version yaml")
-        sys.exit(0)
-    else:
-        arctern_version = args.arctern_version
-        output_path = "./output/" + arctern_version
-
+def test_run(scheduler_file, output_path, args):
     with open(scheduler_file, "r") as f:
         for line in f:
             source_file = line.split(" ")[0]
@@ -184,18 +147,44 @@ if __name__ == "__main__":
                                                   "test_case/" + source_file)
 
             if args.spark is not None:
-                spark_test(out_spark_path + output_file.split("/")[-1], user_module)
+                spark_test(out_spark_path + output_file.split("/")[-1], user_module, source_file)
 
             if args.python is not None:
                 python_test(out_python_path + "/" + output_file.split("/")[-1], user_module)
 
 
+if __name__ == "__main__":
+    parse = argparse.ArgumentParser()
+    parse.add_argument('-f --file', dest='file', nargs=1, default=None)
+    parse.add_argument('-v --conda_env', dest='conda_env', nargs='*')
+    parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=True)
+    parse.add_argument('-p --python', dest="python", nargs='*')
+    parse.add_argument('-s --spark', dest="spark", nargs='*')
 
+    args = parse.parse_args()
 
+    if args.switch_env is not None:
+        switch_env = eval(args.switch_env[0])
+    else:
+        switch_env = False
 
+    if args.conda_env is not None:
+        conda_env_file = args.conda_env[0]
+    else:
+        conda_env_file = "conf/arctern.yaml"
 
-
-
-
-
-
+    if switch_env:
+        switch_conda_environment(conda_env_file, args)
+    else:
+        if args.file is not None:
+            scheduler_file = args.file[0]
+        else:
+            scheduler_file = "scheduler/gis_only/gis_test.txt"
+        with open(conda_env_file, 'r') as env_f:
+            yaml_conf = yaml.safe_load(env_f)
+            dependencies = yaml_conf["dependencies"]
+            version = dependencies[0].split("=")[1]
+            commit_id = dependencies[0].split("=")[2].replace("*", "")
+            output_path = "./output/" + version + "_" + commit_id
+        test_run(scheduler_file, output_path, args)
+    # Todo: read arctern version by web and write conda yaml

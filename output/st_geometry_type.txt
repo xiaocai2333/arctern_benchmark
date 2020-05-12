@@ -1,1 +1,0 @@
- run sql select ST_GeometryType(ST_GeomFromText(geos)) from st_geometry_type time is : 0.00010049748420715332s run sql select ST_GeometryType(ST_GeomFromText(geos)) from st_geometry_type time is : 9.383702278137207e-05s
