@@ -20,6 +20,7 @@ import pandas as pd
 import time
 import os
 import sys
+import yaml
 
 
 def data_proc(csv_path, col_num):
@@ -130,14 +131,30 @@ if __name__ == "__main__":
     parse.add_argument('-f --file', dest='file', nargs=1, default=None)
     # parse.add_argument('-l --last_version', dest='last_version', nargs='+')
     # parse.add_argument('-c --current_version', dest='current_version', nargs='+')
-    parse.add_argument('-v --arctern_version', dest='arctern_version', nargs=1)
+    parse.add_argument('-v --conda_env', dest='conda_env', nargs=1)
     parse.add_argument('-p --python', dest="python", nargs='+')
     parse.add_argument('-s --spark', dest="spark", nargs='+')
 
     args = parse.parse_args()
     scheduler_file = "scheduler/gis_only/gis_test.txt"
+    conda_env_file = "conf/arctern.yaml"
     if args.file is not None:
         scheduler_file = args.scheduler[0]
+
+    if args.conda_env is not None:
+        conda_env_file = args.conda_env[0]
+
+    with open(conda_env_file, "r") as env_f:
+        yaml_conf = yaml.load(env_f)
+        dependencies = yaml_conf["dependencies"]
+        version = dependencies[0].split("=")[1]
+        commit_id = dependencies[0].split("=")[2].replcae("*", "")
+
+    with open(conda_env_file, "w") as env_f:
+        yaml_conf["name"] = "arctern" + version + "-" + commit_id
+        yaml_conf["channels"] = ["conda-forge", "arctern-dev"]
+        yaml.dump(yaml_conf, env_f)
+    os.system("conda env create -f " + conda_env_file)
 
     # Todo: create conda environment by yaml
     # Todo: read arctern version by web and write conda yaml

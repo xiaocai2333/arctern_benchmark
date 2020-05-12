@@ -1,0 +1,4 @@
+--2020-05-11 18:17:46--  http://www.google.com/
+正在解析主机 www.google.com (www.google.com)... 31.13.80.1, 2001::45ab:f40a
+正在连接 www.google.com (www.google.com)|31.13.80.1|:80... 失败：连接超时。
+正在连接 www.google.com (www.google.com)|2001::45ab:f40a|:80... 失败：网络不可达。
