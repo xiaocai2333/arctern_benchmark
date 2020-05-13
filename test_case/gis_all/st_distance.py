@@ -17,6 +17,11 @@ import arctern
 
 csv_path = "data/st_distance.csv"
 col_num = 2
+func_name = "st_distance"
+schema = "left string, right string"
+col_name = ["left", "right"]
+
+sql = "select ST_Distance(ST_GeomFromText(%s), ST_GeomFromText(%s)) from %s"
 
 
 def run(data1, data2):

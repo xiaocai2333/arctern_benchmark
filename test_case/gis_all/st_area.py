@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import arctern
 
 func_name = "st_area"
 csv_path = "data/single_polygon.csv"
 col_num = 1
-col_name = "geos"
+col_name = ["geos"]
 schema = "geos string"
+table_name = "st_area"
 
 sql = "select ST_Area(ST_GeomFromText(%s)) from %s"
 
@@ -33,6 +33,6 @@ sql = "select ST_Area(ST_GeomFromText(%s)) from %s"
 #     spark.sql("cache table result")
 #     spark.sql("uncache table result")
 
-
 def python_test(data):
     arctern.ST_Area(arctern.ST_GeomFromText(data))
+    print("st_area python run done!")

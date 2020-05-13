@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import arctern
-
 func_name = "st_astext"
 csv_path = "data/single_polygon.csv"
 col_num = 1
-col_name = "geos"
+col_name = ["geos"]
 schema = "geos string"
+table_name = "st_astext"
 
 sql = "select ST_AsText(ST_PolygonFromText(%s)) from %s"
 
@@ -35,6 +33,6 @@ sql = "select ST_AsText(ST_PolygonFromText(%s)) from %s"
 #     spark.sql("uncache table result")
 
 
-def run(data):
+def python_test(data):
     arctern.ST_AsText(data)
     print("st_astext run done!")

@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import argparse
-import csv
 import importlib
-import pandas as pd
 import time
 import os
 import sys
 import yaml
+from python import python_benchmark
 
 
 def switch_conda_environment(conda_environment_file, args):
@@ -51,85 +49,11 @@ def switch_conda_environment(conda_environment_file, args):
         sys.exit(1)
 
 
-def data_proc(csv_path, col_num):
-    if col_num == 1:
-        data = []
-        with open(csv_path, "r") as csv_file:
-            spreader = csv.reader(csv_file, delimiter="|", quotechar="|")
-            for row in spreader:
-                data.append(row[0])
-        return pd.Series(data)
-    elif col_num == 2:
-        data1 = []
-        data2 = []
-        with open(csv_path, "r") as csv_file:
-            spreader = csv.reader(csv_file, delimiter="|", quotechar="|")
-            for row in spreader:
-                data1.append(row[0])
-                data2.append(row[1])
-        return pd.Series(data1), pd.Series(data2)
-    elif col_num == 4:
-        x_min = []
-        x_max = []
-        y_min = []
-        y_max = []
-        with open(csv_path, "r") as csv_file:
-            spreader = csv.reader(csv_file, delimiter="|", quotechar="|")
-            for row in spreader:
-                x_min.append(float(row[0]))
-                y_min.append(float(row[1]))
-                x_max.append(float(row[2]))
-                y_max.append(float(row[3]))
-        return pd.Series(x_min), pd.Series(y_min), pd.Series(x_max), pd.Series(y_max)
+def spark_test(output_file, source_file):
+    os.system("spark-submit ./spark/spark_benchmark.py -s %s -o %s" % (source_file, output_file))
 
 
-def spark_test(output_file, user_module, source_file):
-    from spark import arctern_benchmark
-    begin_time = time.time()
-    os.system("spark-submit ./spark/arctern_benchmark.py -s %s" % source_file)
-    end_time = time.time()
-    with open(output_file, "w") as out:
-        out.writelines("run " + str(user_module) + " time is: " + str(end_time - begin_time) + "s")
-
-
-def python_test(output_file, user_module):
-    begin_time = time.time()
-    end_time = time.time()
-
-    if not hasattr(user_module, "python_test"):
-        print("Please write python_test function in your %s!" % str(user_module))
-    if user_module.col_num == 1:
-        if hasattr(user_module, "data_proc"):
-            data = user_module.data_proc(user_module.csv_path, user_module.col_num)
-        else:
-            data = data_proc(user_module.csv_path, user_module.col_num)
-        begin_time = time.time()
-        user_module.python_test(data)
-        end_time = time.time()
-
-    elif user_module.col_num == 2:
-        if hasattr(user_module, "data_proc"):
-            data1, data2 = user_module.data_proc(user_module.csv_path)
-        else:
-            data1, data2 = data_proc(user_module.csv_path, user_module.col_num)
-        begin_time = time.time()
-        user_module.python_test(data1, data2)
-        end_time = time.time()
-
-    elif user_module.col_num == 4:
-        if hasattr(user_module, "data_proc"):
-            x_min, y_min, x_max, y_max = user_module.data_proc(user_module.csv_path)
-        else:
-            x_min, y_min, x_max, y_max = data_proc(user_module.csv_path, user_module.col_num)
-        begin_time = time.time()
-        user_module.python_test(x_min, y_min, x_max, y_max)
-        end_time = time.time()
-
-    with open(output_file, "w") as out:
-        out.writelines("run " + str(user_module) + " time is: " + str(end_time - begin_time) + "s")
-
-
-def test_run(scheduler_file, output_path, args):
+def run_test(scheduler_file, output_path, args):
     with open(scheduler_file, "r") as f:
         for line in f:
             source_file = line.split(" ")[0]
@@ -147,10 +71,10 @@ def test_run(scheduler_file, output_path, args):
                                                   "test_case/" + source_file)
 
             if args.spark is not None:
-                spark_test(out_spark_path + output_file.split("/")[-1], user_module, source_file)
+                spark_test(out_spark_path + output_file.split("/")[-1], source_file)
 
             if args.python is not None:
-                python_test(out_python_path + "/" + output_file.split("/")[-1], user_module)
+                python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1], user_module)
 
 
 if __name__ == "__main__":
@@ -186,5 +110,5 @@ if __name__ == "__main__":
             version = dependencies[0].split("=")[1]
             commit_id = dependencies[0].split("=")[2].replace("*", "")
             output_path = "./output/" + version + "_" + commit_id
-        test_run(scheduler_file, output_path, args)
+        run_test(scheduler_file, output_path, args)
     # Todo: read arctern version by web and write conda yaml

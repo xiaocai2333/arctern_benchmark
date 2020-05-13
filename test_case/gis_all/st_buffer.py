@@ -14,24 +14,28 @@
 
 
 import arctern
+import time
 
 csv_path = "data/single_point.csv"
+func_name = "st_buffer"
 col_num = 1
-col_name = "geos"
+col_name = ["geos"]
 schema = "geos string"
+table_name = "st_buffer"
+sql = "select ST_AsText(ST_Buffer(ST_GeomFromText(%s), 1.2)) from %s"
 
 
 def spark_test(spark):
-    data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
-        schema).load(csv_path).cache()
-    data_df.createOrReplaceTempView("st_buffer")
-    sql = "select ST_AsText(ST_Buffer(ST_GeomFromText(geos), 1.2)) from st_buffer"
-    result_df = spark.sql(sql)
+    TIME_START("st_buffer")
+    result_df = spark.sql(sql % (*col_name, table_name))
     result_df.createOrReplaceTempView("result")
     spark.sql("cache table result")
     spark.sql("uncache table result")
+    TIME_END("st_buffer")
+
+    return TIME_INFO()
 
 
 def python_test(data):
     arctern.ST_AsText(arctern.ST_Buffer(arctern.ST_GeomFromText(data), 1.2))
-    print("st_buffer run done!")
+    print("st_buffer python test run done!")

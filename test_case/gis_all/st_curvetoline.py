@@ -17,6 +17,11 @@ import arctern
 
 csv_path = "data/st_curvetoline.csv"
 col_num = 1
+func_name = "st_curvetoline"
+schema = "geos string"
+col_name = ["geos"]
+
+sql = "select ST_AsText(ST_CurveToLine(ST_GeomFromText(%s))) from %s"
 
 
 def run(data):

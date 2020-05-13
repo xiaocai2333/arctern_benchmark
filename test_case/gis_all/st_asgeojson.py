@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import arctern
-
 func_name = "st_asgeojson"
 csv_path = "data/st_geomfromgeojson.csv"
 col_num = 1
-col_name = "geos"
+col_name = ["geos"]
 schema = "geos string"
+table_name = "st_asgeojson"
 
 sql = "select ST_AsGeoJSON(ST_PolygonFromText(%s)) from %s"
 

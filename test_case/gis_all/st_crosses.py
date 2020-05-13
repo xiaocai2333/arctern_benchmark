@@ -17,6 +17,11 @@ import arctern
 
 csv_path = "data/double_col.csv"
 col_num = 2
+func_name = "st_crosses"
+schema = "left string, right string"
+col_name = ["left", "right"]
+
+sql = "select ST_Crosses(ST_GeomFromText(%s), ST_GeomFromText(%s)) from %s"
 
 
 def run(data1, data2):

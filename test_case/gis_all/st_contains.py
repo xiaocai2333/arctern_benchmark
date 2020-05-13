@@ -17,8 +17,13 @@ import arctern
 
 csv_path = "data/double_col.csv"
 col_num = 2
+func_name = "st_contains"
+schema = "left string, right string"
+col_name = ["left", "right"]
+
+sql = "select ST_Contains(ST_GeomFromText(%s), ST_GeomFromText(%s)) from %s"
 
 
-def run(data1, data2):
+def python_test(data1, data2):
     arctern.ST_Contains(arctern.ST_GeomFromText(data1), arctern.ST_GeomFromText(data2))
     print("st_area run done!")
