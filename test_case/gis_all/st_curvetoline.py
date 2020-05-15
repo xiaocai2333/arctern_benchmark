@@ -26,4 +26,3 @@ sql = "select ST_AsText(ST_CurveToLine(ST_GeomFromText(%s))) from %s"
 
 def run(data):
     arctern.ST_AsText(arctern.ST_CurveToLine(arctern.ST_GeomFromText(data)))
-    print("st_curvetoline run done!")

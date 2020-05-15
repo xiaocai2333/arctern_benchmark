@@ -21,4 +21,3 @@ col_num = 1
 
 def run(data):
     arctern.ST_AsText(arctern.ST_GeomFromGeoJSON(data))
-    print("st_geom_from_geojson run done!")

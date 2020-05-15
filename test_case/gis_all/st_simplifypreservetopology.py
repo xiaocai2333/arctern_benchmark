@@ -21,4 +21,3 @@ col_num = 1
 
 def run(data):
     arctern.ST_AsText(arctern.ST_SimplifyPreserveTopology(arctern.ST_GeomFromText(data), 10000))
-    print("ST_SimplifyPreserveTopology run done!")

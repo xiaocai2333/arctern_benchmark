@@ -34,4 +34,3 @@ def data_proc(csv_path):
 
 def run(data1, data2):
     arctern.ST_AsText(arctern.ST_Point(data1, data2))
-    print("st_point run done!")

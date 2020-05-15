@@ -21,7 +21,7 @@ REP_KEYS_MAP = {
 
 
 def read_and_replace(data_path, mode, template_path, output_path):
-    string_data = ""
+
     with open(data_path, "r") as f:
         lines = f.readlines()
         string_data = "".join(lines)
@@ -31,7 +31,6 @@ def read_and_replace(data_path, mode, template_path, output_path):
     rep_data = eval(string_data)
     assert rep_data
 
-    print(rep_data)
     rep_keys = REP_KEYS_MAP[mode]
 
     with open(template_path, "r") as f:
@@ -39,7 +38,6 @@ def read_and_replace(data_path, mode, template_path, output_path):
         all_string = "".join(lines)
         for k in rep_keys:
             v = rep_data[k]
-            print(v)
             all_string = all_string.replace(k, str(v))
 
     if all_string:

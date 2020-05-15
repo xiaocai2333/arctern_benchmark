@@ -26,4 +26,3 @@ sql = "select ST_AsText(ST_ConvexHull(ST_GeomFromText(%s))) from %s"
 
 def run(data):
     arctern.ST_AsText(arctern.ST_ConvexHull(arctern.ST_GeomFromText(data)))
-    print("st_convexhull run done!")

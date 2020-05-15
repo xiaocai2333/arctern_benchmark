@@ -21,4 +21,3 @@ col_num = 1
 
 def run(data):
     arctern.ST_NPoints(arctern.ST_GeomFromText(data))
-    print("st_npoints run done!")

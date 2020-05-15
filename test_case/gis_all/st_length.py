@@ -21,4 +21,3 @@ col_num = 1
 
 def run(data):
     arctern.ST_Length(arctern.ST_GeomFromText(data))
-    print("st_length run done!")

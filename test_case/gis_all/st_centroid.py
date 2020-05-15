@@ -37,4 +37,3 @@ def spark_test(spark, csv_path):
 
 def python_test(data):
     arctern.ST_AsText(arctern.ST_Centroid(arctern.ST_GeomFromText(data)))
-    print("st_centroid run done!")

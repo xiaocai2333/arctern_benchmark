@@ -26,4 +26,3 @@ sql = "select ST_DistanceSphere(ST_GeomFromText(%s), ST_GeomFromText(%s)) from %
 
 def run(data1, data2):
     arctern.ST_DistanceSphere(arctern.ST_GeomFromText(data1), arctern.ST_GeomFromText(data2))
-    print("ST_DistanceSphere run done!")

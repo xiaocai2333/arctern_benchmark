@@ -103,7 +103,7 @@ if __name__ == "__main__":
         conda_env_file = "conf/arctern.yaml"
 
     run_time = int(args.time[0])
-    print(run_time)
+
     # Todo: create multiple conda env
     if switch_env:
         switch_conda_environment(conda_env_file, args)

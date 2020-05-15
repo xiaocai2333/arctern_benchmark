@@ -21,4 +21,3 @@ col_num = 1
 
 def run(data):
     arctern.ST_AsText(arctern.ST_MakeValid(arctern.ST_GeomFromText(data)))
-    print("st_makevalid run done!")

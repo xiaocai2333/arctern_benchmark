@@ -20,7 +20,6 @@ def read_file_calculate_time(file):
     total_time = []
     with open(file, "r") as f:
         file_data = json.load(f)
-        print(file_data)
         for key in file_data:
             try:
                 int(key)
@@ -28,7 +27,6 @@ def read_file_calculate_time(file):
             except ValueError:
                 pass
     s = 0
-    print(total_time)
     for time in total_time[1:]:
         s += time
     return s / (len(total_time) - 1)
@@ -56,22 +54,17 @@ def extract_all_pref():
 
 
 def pref_data():
+
     all_version, all_commit_id, python_output_path, spark_output_path, test_suites = extract_all_pref()
-    # print(all_version)
-    # print(all_commit_id)
-    # print(python_output_path)
-    # print(spark_output_path)
-    # print(test_suites)   # all test cases for example([case1, case2, case3])
+
     all_case_files = {}
     # all test cases and all files for each case for example
     # ({"gis_test":[st_area.txt, st_buffer.txt], "gis_all":[case1, case2, case3]})
-    print(python_output_path)
     for test_case in test_suites:
-        case_files = [file for file in os.listdir(os.path.join(python_output_path[0], test_case)) if os.path.isfile(
+        case_files = [file.replace(".json", "") for file in os.listdir(os.path.join(python_output_path[0], test_case)) if os.path.isfile(
             os.path.join(os.path.join(python_output_path[0], test_case), file))]
         all_case_files[test_case] = case_files
 
-    print(all_case_files)
     all_case_time = []
     for test_case in all_case_files:
         case_files = all_case_files[test_case]
@@ -80,10 +73,8 @@ def pref_data():
             python_time = []
             spark_time = []
             for i in range(len(python_output_path)):
-                python_file = os.path.join(os.path.join(python_output_path[0], test_case), file)
-                spark_file = os.path.join(os.path.join(spark_output_path[0], test_case), file)
-                print(python_file)
-                print(spark_file)
+                python_file = os.path.join(os.path.join(python_output_path[0], test_case), file + ".json")
+                spark_file = os.path.join(os.path.join(spark_output_path[0], test_case), file + ".json")
                 python_time.append(str(read_file_calculate_time(python_file)))
                 spark_time.append(str(read_file_calculate_time(spark_file)))
             pre_file_time = ",".join(python_time) + ":" + ",".join(spark_time)

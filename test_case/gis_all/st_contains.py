@@ -26,4 +26,3 @@ sql = "select ST_Contains(ST_GeomFromText(%s), ST_GeomFromText(%s)) from %s"
 
 def python_test(data1, data2):
     arctern.ST_Contains(arctern.ST_GeomFromText(data1), arctern.ST_GeomFromText(data2))
-    print("st_area run done!")

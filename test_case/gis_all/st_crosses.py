@@ -26,4 +26,3 @@ sql = "select ST_Crosses(ST_GeomFromText(%s), ST_GeomFromText(%s)) from %s"
 
 def run(data1, data2):
     arctern.ST_Crosses(arctern.ST_GeomFromText(data1), arctern.ST_GeomFromText(data2))
-    print("st_crosses run done!")

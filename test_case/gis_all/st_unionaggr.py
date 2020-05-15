@@ -21,4 +21,3 @@ col_num = 1
 
 def run(data):
     arctern.ST_AsText(arctern.ST_Union_Aggr(arctern.ST_GeomFromText(data)))
-    print("ST_Union_Aggr run done!")

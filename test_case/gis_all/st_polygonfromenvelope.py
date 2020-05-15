@@ -37,4 +37,3 @@ def data_proc(csv_path):
 
 def run(x_min, y_min, x_max, y_max):
     arctern.ST_AsText(arctern.ST_PolygonFromEnvelope(x_min, y_min, x_max, y_max))
-    print("ST_PolygonFromEnvelope run done!")

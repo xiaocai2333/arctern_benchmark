@@ -35,4 +35,3 @@ sql = "select ST_AsText(ST_PolygonFromText(%s)) from %s"
 
 def python_test(data):
     arctern.ST_AsText(data)
-    print("st_astext run done!")

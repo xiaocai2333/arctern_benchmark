@@ -21,4 +21,3 @@ col_num = 2
 
 def run(data1, data2):
     arctern.ST_AsText(arctern.ST_Intersection(arctern.ST_GeomFromText(data1), arctern.ST_GeomFromText(data2)))
-    print("st_intersection run done!")

@@ -21,4 +21,3 @@ col_num = 1
 
 def run(data):
     arctern.ST_AsText(arctern.ST_PrecisionReduce(arctern.ST_GeomFromText(data), 3))
-    print("st_precision_reduce run done!")
