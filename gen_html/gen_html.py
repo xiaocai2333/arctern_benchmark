@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 REP_KEYS_MAP = {
     "perf":('ROWS', 'REP_SET_NAMES', 'REP_DATASETS', 'REP_FUNC_NAMES'),
-    "scale": ('REP_NODES', 'REP_SET_NAMES', 'REP_SET_NAMES', 'REP_FUNC_NAMES'),
+    "scale": ('REP_NODES', 'REP_SET_NAMES', 'REP_DATASETS', 'REP_FUNC_NAMES'),
 }
 
 
@@ -29,24 +31,31 @@ def read_and_replace(data_path, mode, template_path, output_path):
     rep_data = eval(string_data)
     assert rep_data
 
+    print(rep_data)
     rep_keys = REP_KEYS_MAP[mode]
 
-    with open (template_path, "r") as f:
+    with open(template_path, "r") as f:
         lines = f.readlines()
         all_string = "".join(lines)
         for k in rep_keys:
             v = rep_data[k]
+            print(v)
             all_string = all_string.replace(k, str(v))
 
     if all_string:
-        with open (output_path, "w") as f:
+        with open(output_path, "w") as f:
             f.write(all_string)
 
 
 def gen_html():
     mode = "scale"
-    template_path = "./perf_scale.template"
-    output_path = "benchmark.html"
-    data_path = "./a.txt"
+    template_path = "gen_html/perf_scale.template"
+    data_path = "gen_html/data_path"
+    output_path = "gen_html/html"
+    for file in os.listdir(data_path):
+        data_file = os.path.join(data_path, file)
+        output_file = os.path.join(output_path, file.replace(".txt", ".html"))
+        read_and_replace(data_file, mode, template_path, output_file)
 
-    read_and_replace(data_path, mode, template_path, output_path)
+
+

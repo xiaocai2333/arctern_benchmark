@@ -51,7 +51,7 @@ def switch_conda_environment(conda_environment_file, args):
 
 def spark_test(output_file, source_file, run_times, commit_id, version):
     command = "spark-submit ./spark/spark_benchmark.py -s %s -o %s -t %s -c %s -v %s" % (
-        source_file, output_file.replace("\n", ""), run_times, commit_id, version)
+        source_file, output_file, run_times, commit_id, version)
     print(command)
     os.system(command)
 
@@ -74,11 +74,11 @@ def run_test(scheduler_file, output_path, args, run_time, commit_id, version):
                                                   "test_case/" + source_file)
 
             if args.spark is not None:
-                spark_test(out_spark_path + output_file.split("/")[-1], source_file, run_time, commit_id, version)
+                spark_test(out_spark_path + output_file.split("/")[-1].replace("\n", ""), source_file, run_time, commit_id, version)
 
             if args.python is not None:
-                python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1], user_module, run_time,
-                                             commit_id, version)
+                python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1].replace("\n", ""),
+                                             user_module, run_time, commit_id, version)
 
 
 if __name__ == "__main__":
@@ -123,6 +123,7 @@ if __name__ == "__main__":
         with open(scheduler_file, "r") as f:
             line = f.readline()
             test_case_path = line.split(" ")[0].replace(line.split(" ")[0].split("/")[-1], "")
-        collect_result.pref_data(test_case_path)
+
+        collect_result.gen_data_path()
         gen_html.gen_html()
     # Todo: draw web map

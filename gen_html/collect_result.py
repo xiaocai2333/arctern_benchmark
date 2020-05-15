@@ -20,13 +20,15 @@ def read_file_calculate_time(file):
     total_time = []
     with open(file, "r") as f:
         file_data = json.load(f)
+        print(file_data)
         for key in file_data:
             try:
                 int(key)
-                total_time.append(file_data[key])
+                total_time.append(file_data[key]["total_time"])
             except ValueError:
                 pass
     s = 0
+    print(total_time)
     for time in total_time[1:]:
         s += time
     return s / (len(total_time) - 1)
@@ -53,50 +55,49 @@ def extract_all_pref():
     return all_version, all_commit_id, python_output_path, spark_output_path, test_suites
 
 
-def pref_data(output_path):
+def pref_data():
     all_version, all_commit_id, python_output_path, spark_output_path, test_suites = extract_all_pref()
-    print(all_version)
-    print(all_commit_id)
-    print(python_output_path)
-    print(spark_output_path)
-    print(test_suites)   # all test cases for example([case1, case2, case3])
-    all_case_file = {}
+    # print(all_version)
+    # print(all_commit_id)
+    # print(python_output_path)
+    # print(spark_output_path)
+    # print(test_suites)   # all test cases for example([case1, case2, case3])
+    all_case_files = {}
     # all test cases and all files for each case for example
     # ({"gis_test":[st_area.txt, st_buffer.txt], "gis_all":[case1, case2, case3]})
+    print(python_output_path)
     for test_case in test_suites:
         case_files = [file for file in os.listdir(os.path.join(python_output_path[0], test_case)) if os.path.isfile(
             os.path.join(os.path.join(python_output_path[0], test_case), file))]
-        all_case_file[test_case] = case_files
+        all_case_files[test_case] = case_files
 
-    print(test_suites)
-    spark_total_time = []
-    python_total_time = []
-
+    print(all_case_files)
     all_case_time = []
-    for test_case in test_suites:
-        case_files = test_suites[test_case]
+    for test_case in all_case_files:
+        case_files = all_case_files[test_case]
         pre_case_all_file_time = []
         for file in case_files:
-            pre_file_time = []
-            for path in python_output_path:
-                pre_file_time.append(read_file_calculate_time(os.path.join(os.path.join(path, test_case), file)))
+            python_time = []
+            spark_time = []
+            for i in range(len(python_output_path)):
+                python_file = os.path.join(os.path.join(python_output_path[0], test_case), file)
+                spark_file = os.path.join(os.path.join(spark_output_path[0], test_case), file)
+                print(python_file)
+                print(spark_file)
+                python_time.append(str(read_file_calculate_time(python_file)))
+                spark_time.append(str(read_file_calculate_time(spark_file)))
+            pre_file_time = ",".join(python_time) + ":" + ",".join(spark_time)
             pre_case_all_file_time.append(pre_file_time)
         all_case_time.append(pre_case_all_file_time)
 
-    func_time_list = []
-    for i in range(len(spark_total_time)):
-        spark_time = spark_total_time[i]
-        python_time = python_total_time[i]
-        func_time = str(spark_time) + ":" + str(python_time)
-        func_time_list.append(func_time)
-
-    html_data = {'REP_NODES':all_commit_id, 'REP_SET_NAMES':["spark", "python"], 'REP_DATASETS':func_time_list,
-                 'REP_FUNC_NAMES': file_list}
-
-    with open("./a.txt", "w") as f:
-        json_obj = json.dumps(html_data)
-        f.write(json_obj)
-    # return html_data
+    return all_version, all_commit_id, all_case_time, all_case_files
 
 
+def gen_data_path():
+    all_version, all_commit_id, all_case_time, all_case_files = pref_data()
+    for i in range(len(all_case_files)):
+        file_dict = {"REP_NODES": all_commit_id, "REP_SET_NAMES": ["python", "spark"], "REP_DATASETS": all_case_time[i],
+                     "REP_FUNC_NAMES": all_case_files[list(all_case_files.keys())[i]]}
+        with open("gen_html/data_path/" + list(all_case_files.keys())[i] + ".txt", "w") as data_f:
+            data_f.write(str(file_dict))
 
