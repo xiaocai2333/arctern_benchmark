@@ -57,18 +57,27 @@ setattr(builtins, "TIME_INFO", TIME_INFO)
 def write_output_time(output_file, test_time):
     test_time["version"] = "0.1.0"
     test_time["commit_id"] = "sasdasda"
-    with open(output_file) as out:
-        json.dump(time_test, out)
+    json_obj = json.dumps(test_time)
+    json_file = open(output_file, "w")
+    json_file.write(json_obj)
+    json_file.close()
 
 
 if __name__ == '__main__':
     parse = argparse.ArgumentParser()
     parse.add_argument('-s --source_file', dest='source_file', nargs=1)
     parse.add_argument('-o --output_file', dest='output_file', nargs=1)
+    parse.add_argument('-t --run_times', dest='run_times', nargs=1)
+    parse.add_argument('-c --commit_id', dest='commit_id', nargs=1)
+    parse.add_argument('-v --version', dest='version', nargs=1)
 
     args = parse.parse_args()
     source_file = args.source_file[0]
     output_file = args.output_file[0]
+    run_times = int(args.run_times[0])
+    commit_id = args.commit_id[0]
+    version = args.version[0]
+
     user_module = importlib.import_module("test_case." + (source_file.split(".")[0]).replace("/", "."),
                                           "test_case/" + source_file)
     spark_session = SparkSession \
@@ -79,34 +88,40 @@ if __name__ == '__main__':
 
     register_funcs(spark_session)
 
-    time_test = {}
+    all_time_info = {"version": version, "commit_id": commit_id, "func_name": user_module.func_name}
 
     if hasattr(user_module, "spark_test"):
         data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
             user_module.schema).load(user_module.csv_path).cache()
         data_df.createOrReplaceTempView(user_module.table_name)
-        time_test = user_module.spark_test(spark_session)
-        print(time_test)
+        for times in range(run_times):
+            time_info = {}
+            begin_time = time.time()
+            time_info["step"] = user_module.spark_test(spark_session)
+            end_time = time.time()
+            time_info["total_time"] = round(end_time - begin_time, 4)
+            all_time_info["%s" % str(times)] = time_info
         print(user_module.func_name + " spark test run done!")
 
     else:
         data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
             user_module.schema).load(user_module.csv_path).cache()
         data_df.createOrReplaceTempView(user_module.table_name)
-        TIME_START("st_buffer")
-        result_df = spark_session.sql(user_module.sql % (*user_module.col_name, user_module.table_name))
-        result_df.createOrReplaceTempView("result")
-        spark_session.sql("cache table result")
-        spark_session.sql("uncache table result")
-        TIME_START("st_buffer")
-        time_test = TIME_INFO()
+        for times in range(run_times):
+            time_info = {}
+            begin_time = time.time()
+            result_df = spark_session.sql(user_module.sql % (*user_module.col_name, user_module.table_name))
+            result_df.createOrReplaceTempView("result")
+            spark_session.sql("cache table result")
+            spark_session.sql("uncache table result")
+            end_time = time.time()
+            time_info["total_time"] = round(end_time - begin_time, 4)
+            time_step = {"step": round(end_time - begin_time, 4)}
+            time_info["step"] = time_step
+            all_time_info["%s" % str(times)] = time_info
+
         print(user_module.func_name + " spark test run done!")
 
-    with open(output_file, "w") as out:
-        for i in time_test:
-            print(i)
-            out.writelines(i)
-            print(str(time_test[i]))
-            out.writelines(str(time_test[i]))
+    write_output_time(output_file, all_time_info)
     # Todo: write out time to json file
 

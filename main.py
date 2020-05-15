@@ -14,11 +14,11 @@
 
 import argparse
 import importlib
-import time
 import os
 import sys
 import yaml
 from python import python_benchmark
+from gen_html import collect_result, gen_html
 
 
 def switch_conda_environment(conda_environment_file, args):
@@ -49,11 +49,14 @@ def switch_conda_environment(conda_environment_file, args):
         sys.exit(1)
 
 
-def spark_test(output_file, source_file):
-    os.system("spark-submit ./spark/spark_benchmark.py -s %s -o %s" % (source_file, output_file))
+def spark_test(output_file, source_file, run_times, commit_id, version):
+    command = "spark-submit ./spark/spark_benchmark.py -s %s -o %s -t %s -c %s -v %s" % (
+        source_file, output_file.replace("\n", ""), run_times, commit_id, version)
+    print(command)
+    os.system(command)
 
 
-def run_test(scheduler_file, output_path, args):
+def run_test(scheduler_file, output_path, args, run_time, commit_id, version):
     with open(scheduler_file, "r") as f:
         for line in f:
             source_file = line.split(" ")[0]
@@ -71,10 +74,11 @@ def run_test(scheduler_file, output_path, args):
                                                   "test_case/" + source_file)
 
             if args.spark is not None:
-                spark_test(out_spark_path + output_file.split("/")[-1], source_file)
+                spark_test(out_spark_path + output_file.split("/")[-1], source_file, run_time, commit_id, version)
 
             if args.python is not None:
-                python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1], user_module)
+                python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1], user_module, run_time,
+                                             commit_id, version)
 
 
 if __name__ == "__main__":
@@ -84,6 +88,7 @@ if __name__ == "__main__":
     parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=True)
     parse.add_argument('-p --python', dest="python", nargs='*')
     parse.add_argument('-s --spark', dest="spark", nargs='*')
+    parse.add_argument('-t --time', dest='time', nargs=1)
 
     args = parse.parse_args()
 
@@ -97,6 +102,9 @@ if __name__ == "__main__":
     else:
         conda_env_file = "conf/arctern.yaml"
 
+    run_time = int(args.time[0])
+    print(run_time)
+    # Todo: create multiple conda env
     if switch_env:
         switch_conda_environment(conda_env_file, args)
     else:
@@ -109,6 +117,12 @@ if __name__ == "__main__":
             dependencies = yaml_conf["dependencies"]
             version = dependencies[0].split("=")[1]
             commit_id = dependencies[0].split("=")[2].replace("*", "")
-            output_path = "./output/" + version + "_" + commit_id
-        run_test(scheduler_file, output_path, args)
-    # Todo: read arctern version by web and write conda yaml
+            output_path = "./output/" + version + "/" + commit_id
+        run_test(scheduler_file, output_path, args, run_time, commit_id, version)
+
+        with open(scheduler_file, "r") as f:
+            line = f.readline()
+            test_case_path = line.split(" ")[0].replace(line.split(" ")[0].split("/")[-1], "")
+        collect_result.pref_data(test_case_path)
+        gen_html.gen_html()
+    # Todo: draw web map

@@ -1,2 +1,2 @@
-gis_all/st_area.py gis_all/st_area.txt
-gis_all/st_buffer.py gis_all/st_buffer.txt
+gis_all/st_area.py gis_all/st_area.json
+gis_all/st_buffer.py gis_all/st_buffer.json

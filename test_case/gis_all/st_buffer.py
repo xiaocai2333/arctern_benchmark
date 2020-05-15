@@ -37,5 +37,10 @@ def spark_test(spark):
 
 
 def python_test(data):
+    TIME_START("st_buffer")
     arctern.ST_AsText(arctern.ST_Buffer(arctern.ST_GeomFromText(data), 1.2))
+    TIME_END("st_buffer")
     print("st_buffer python test run done!")
+
+    return TIME_INFO()
+

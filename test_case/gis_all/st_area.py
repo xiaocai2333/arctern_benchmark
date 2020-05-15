@@ -34,5 +34,9 @@ sql = "select ST_Area(ST_GeomFromText(%s)) from %s"
 #     spark.sql("uncache table result")
 
 def python_test(data):
+    TIME_START("st_area")
     arctern.ST_Area(arctern.ST_GeomFromText(data))
+    TIME_END("st_area")
+
     print("st_area python run done!")
+    return TIME_INFO()
