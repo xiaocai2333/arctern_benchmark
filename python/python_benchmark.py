@@ -68,7 +68,7 @@ def data_proc(csv_path, col_num):
     return data_list
 
 
-def python_test(output_file, user_module, run_time, commit_id, version):
+def python_test(output_file, user_module, run_time, commit_id):
 
     if not hasattr(user_module, "python_test"):
         print("Please write python_test function in your %s!" % user_module.__name__)
@@ -79,7 +79,8 @@ def python_test(output_file, user_module, run_time, commit_id, version):
     else:
         data = data_proc(user_module.csv_path, user_module.col_num)
 
-    all_time_info = {"version": version, "commit_id": commit_id, "func_name": user_module.func_name}
+    all_time_info = {"version": commit_id.split("-")[0], "commit_id": commit_id.split("-")[-1],
+                     "func_name": user_module.func_name}
     for times in range(run_time):
         time_info = {}
         begin_time = time.time()

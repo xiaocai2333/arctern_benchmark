@@ -46,7 +46,7 @@ def switch_conda_environment(conda_environment_file):
         delete_current_conda_env_file.write(delete_current_conda_env_list)
         original_conda_file.close()
         delete_current_conda_env_file.close()
-        conda_prefix = os.popen("conda env export -n %s | grep prefix" % conda_env_name).read().split(" ")[-1].replace(
+        conda_prefix = os.popen("conda env list | grep %s" % conda_env_name).read().split(" ")[-1].replace(
             "\n", "")
         exec_python_path = conda_prefix + "/bin/python"
         for n, e in enumerate(sys.argv):
@@ -61,17 +61,16 @@ def switch_conda_environment(conda_environment_file):
         sys.exit(1)
 
 
-def spark_test(output_file, source_file, run_times, commit_id, version):
-    command = "spark-submit ./spark/spark_benchmark.py -s %s -o %s -t %s -c %s -v %s" % (
-        source_file, output_file, run_times, commit_id, version)
+def spark_test(output_file, source_file, run_times, commit_id):
+    command = "spark-submit ./spark/spark_benchmark.py -s %s -o %s -t %s -v %s" % (
+        source_file, output_file, run_times, commit_id)
     print(command)
     os.system(command)
 
 
 def run_test(scheduler_file, commit_id, test_spark, test_python):
 
-    version = "0.1.1"
-    output_path = "output/" + version + "-" +commit_id
+    output_path = "output/" + commit_id
 
     with open(scheduler_file, "r") as f:
         for line in f:
@@ -90,11 +89,11 @@ def run_test(scheduler_file, commit_id, test_spark, test_python):
                                                   "test_case/" + source_file)
 
             if test_spark:
-                spark_test(out_spark_path + output_file.split("/")[-1].replace("\n", ""), source_file, run_time, commit_id, version)
+                spark_test(out_spark_path + output_file.split("/")[-1].replace("\n", ""), source_file, run_time, commit_id)
 
             if test_python:
                 python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1].replace("\n", ""),
-                                             user_module, run_time, commit_id, version)
+                                             user_module, run_time, commit_id)
 
 
 def tag_commit_build_time():
@@ -103,17 +102,15 @@ def tag_commit_build_time():
     version_info = arctern.version().split("\n")
     print(version_info)
     build_time = ""
-    commit_id = ""
+    commit_id = sys.prefix.replace("\n", "").split("/")[-1]
     for info in version_info:
         if re.search("build time", info):
             build_time = info.replace("build time : ", "")
-        if re.search("commit id", info):
-            commit_id = info.replace("commit id : ", "")
 
     version_build_time = {"build_time": build_time,
                           "commit_id": commit_id}
 
-    with open("version_build_time.txt", "a+") as file:
+    with open("gen_html/version_build_time.txt", "a+") as file:
         file.writelines(str(version_build_time) + "\n")
 
     return commit_id
@@ -137,12 +134,12 @@ if __name__ == "__main__":
         switch_env = False
 
     conda_env_file = "conf/arctern_version.conf"
-
+    print(sys.prefix)
     run_time = eval(args.time[0])
     if eval(args.copy_conf[0]):
         os.system("cp conf/arctern.conf %s" % conda_env_file)
+        os.system("rm gen_html/version_build_time.txt")
 
-    print(os.system("conda env export | grep name"))
     if switch_env:
         switch_conda_environment(conda_env_file)
     else:

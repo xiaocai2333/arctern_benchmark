@@ -18,8 +18,8 @@ import inspect
 import builtins
 import time
 import json
+import sys
 from pyspark.sql import SparkSession
-from arctern_pyspark import register_funcs
 
 
 def TIME_START(step):
@@ -64,19 +64,19 @@ def write_output_time(output_file, test_time):
 
 
 if __name__ == '__main__':
+    from arctern_pyspark import register_funcs
+
     parse = argparse.ArgumentParser()
     parse.add_argument('-s --source_file', dest='source_file', nargs=1)
     parse.add_argument('-o --output_file', dest='output_file', nargs=1)
     parse.add_argument('-t --run_times', dest='run_times', nargs=1)
-    parse.add_argument('-c --commit_id', dest='commit_id', nargs=1)
     parse.add_argument('-v --version', dest='version', nargs=1)
 
     args = parse.parse_args()
     source_file = args.source_file[0]
     output_file = args.output_file[0]
     run_times = int(args.run_times[0])
-    commit_id = args.commit_id[0]
-    version = args.version[0]
+    version_commit = args.version[0]
 
     user_module = importlib.import_module("test_case." + (source_file.split(".")[0]).replace("/", "."),
                                           "test_case/" + source_file)
@@ -85,10 +85,15 @@ if __name__ == '__main__':
         .appName("Python Arrow-in-Spark example") \
         .getOrCreate()
     spark_session.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+    conda_prefix = sys.prefix
+    spark_session.conf.set("spark.executorEnv.PROJ_LIB", conda_prefix + "/share/proj")
+    spark_session.conf.set("spark.executorEnv.GDAL_DATA", conda_prefix + "/share/gdal")
+    spark_session.conf.set("PYSPARK_PYTHON", conda_prefix + "/bin/python")
 
     register_funcs(spark_session)
 
-    all_time_info = {"version": version, "commit_id": commit_id, "func_name": user_module.func_name}
+    all_time_info = {"version": version_commit.split("-")[0], "commit_id": version_commit.split("-")[-1],
+                     "func_name": user_module.func_name}
 
     if hasattr(user_module, "spark_test"):
         data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
@@ -123,5 +128,4 @@ if __name__ == '__main__':
         print(user_module.func_name + " spark test run done!")
 
     write_output_time(output_file, all_time_info)
-    # Todo: write out time to json file
 

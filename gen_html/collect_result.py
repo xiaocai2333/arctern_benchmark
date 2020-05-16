@@ -48,13 +48,14 @@ def extract_all_pref(test_list):
     commit_id_build_time = []
     import ast
     eval = ast.literal_eval
-    with open("version_build_time.txt", "r") as commit_f:
+    with open("gen_html/version_build_time.txt", "r") as commit_f:
         for line in commit_f.readlines():
             line = "".join(line)
             line = line or "{}"
             commit_dict = eval("".join(line))
             all_version_commit_id.append(commit_dict["commit_id"])
             commit_id_build_time.append(commit_dict["build_time"])
+
     all_version_commit_id = order_version_by_built_time(all_version_commit_id, commit_id_build_time)
     for commit in all_version_commit_id:
         all_version_commit_id_path.append(os.path.join("output", commit))
