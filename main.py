@@ -21,28 +21,40 @@ from python import python_benchmark
 from gen_html import collect_result, gen_html
 
 
-def switch_conda_environment(conda_environment_file, args):
+def switch_conda_environment(conda_environment_file):
     with open(conda_environment_file, "r") as env_f:
-        yaml_conf = yaml.safe_load(env_f)
-        dependencies = yaml_conf["dependencies"]
-        version = dependencies[0].split("=")[1]
-        commit_id = dependencies[0].split("=")[2].replace("*", "")
+        commit_info = env_f.readline()
+    version = commit_info.split("=")[0]
+    commit_id = commit_info.split("=")[-1].replace("\n", "")
+    conda_env_name = (version + "-" + commit_id).replace("*", "")
+    conda_env_dict = {"name": conda_env_name, "channels": ["conda-forge", "arctern-dev"],
+                      "dependencies": ["libarctern=" + version + "=" + commit_id,
+                                       "arctern=" + version + "=" + commit_id,
+                                       "arctern-spark=" + version + "=" + commit_id,
+                                       "pyyaml"]}
+    with open("conf/arctern.yaml", "w") as conda_env_f:
+        yaml_obj = yaml.dump(conda_env_dict)
+        conda_env_f.write(yaml_obj)
 
-    conda_env_name = "arctern" + version + "-" + commit_id
-    with open(conda_environment_file, "w") as env_f:
-        yaml_conf["name"] = conda_env_name
-        yaml_conf["channels"] = ["conda-forge", "arctern-dev"]
-        yaml_conf["dependencies"].append("pyyaml")
-        yaml.dump(yaml_conf, env_f)
-    status = os.system("conda env create -f " + conda_environment_file)
+    status = os.system("conda env create -f conf/arctern.yaml")
 
     if status >= 0:
+        original_conda_file = open("conf/arctern_version.conf", "r")
+        original_conda_env_list = original_conda_file.readlines()
+        delete_current_conda_env_file = open("conf/arctern_version.conf", "w")
+        delete_current_conda_env_list = "".join(original_conda_env_list[1:])
+        delete_current_conda_env_file.write(delete_current_conda_env_list)
+        original_conda_file.close()
+        delete_current_conda_env_file.close()
         conda_prefix = os.popen("conda env export -n %s | grep prefix" % conda_env_name).read().split(" ")[-1].replace(
             "\n", "")
         exec_python_path = conda_prefix + "/bin/python"
         for n, e in enumerate(sys.argv):
             if e == "-w":
                 sys.argv[n + 1] = "False"
+            if e == "-c":
+                sys.argv[n+1] = "False"
+        print(exec_python_path)
         os.execlp(exec_python_path, "arctern test", *sys.argv)
     else:
         print("create conda environment failed!")
@@ -56,7 +68,11 @@ def spark_test(output_file, source_file, run_times, commit_id, version):
     os.system(command)
 
 
-def run_test(scheduler_file, output_path, args, run_time, commit_id, version):
+def run_test(scheduler_file, commit_id, test_spark, test_python):
+
+    version = "0.1.1"
+    output_path = "output/" + version + "-" +commit_id
+
     with open(scheduler_file, "r") as f:
         for line in f:
             source_file = line.split(" ")[0]
@@ -73,12 +89,34 @@ def run_test(scheduler_file, output_path, args, run_time, commit_id, version):
             user_module = importlib.import_module("test_case." + (source_file.split(".")[0]).replace("/", "."),
                                                   "test_case/" + source_file)
 
-            if args.spark is not None:
+            if test_spark:
                 spark_test(out_spark_path + output_file.split("/")[-1].replace("\n", ""), source_file, run_time, commit_id, version)
 
-            if args.python is not None:
+            if test_python:
                 python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1].replace("\n", ""),
                                              user_module, run_time, commit_id, version)
+
+
+def tag_commit_build_time():
+    import arctern
+    import re
+    version_info = arctern.version().split("\n")
+    print(version_info)
+    build_time = ""
+    commit_id = ""
+    for info in version_info:
+        if re.search("build time", info):
+            build_time = info.replace("build time : ", "")
+        if re.search("commit id", info):
+            commit_id = info.replace("commit id : ", "")
+
+    version_build_time = {"build_time": build_time,
+                          "commit_id": commit_id}
+
+    with open("version_build_time.txt", "a+") as file:
+        file.writelines(str(version_build_time) + "\n")
+
+    return commit_id
 
 
 if __name__ == "__main__":
@@ -89,6 +127,7 @@ if __name__ == "__main__":
     parse.add_argument('-p --python', dest="python", nargs='*')
     parse.add_argument('-s --spark', dest="spark", nargs='*')
     parse.add_argument('-t --time', dest='time', nargs=1)
+    parse.add_argument('-c --copy_conf', dest='copy_conf', nargs=1)
 
     args = parse.parse_args()
 
@@ -97,33 +136,39 @@ if __name__ == "__main__":
     else:
         switch_env = False
 
-    if args.conda_env is not None:
-        conda_env_file = args.conda_env[0]
-    else:
-        conda_env_file = "conf/arctern.yaml"
+    conda_env_file = "conf/arctern_version.conf"
 
-    run_time = int(args.time[0])
+    run_time = eval(args.time[0])
+    if eval(args.copy_conf[0]):
+        os.system("cp conf/arctern.conf %s" % conda_env_file)
 
-    # Todo: create multiple conda env
+    print(os.system("conda env export | grep name"))
     if switch_env:
-        switch_conda_environment(conda_env_file, args)
+        switch_conda_environment(conda_env_file)
     else:
         if args.file is not None:
             scheduler_file = args.file[0]
         else:
             scheduler_file = "scheduler/gis_only/gis_test.txt"
-        with open(conda_env_file, 'r') as env_f:
-            yaml_conf = yaml.safe_load(env_f)
-            dependencies = yaml_conf["dependencies"]
-            version = dependencies[0].split("=")[1]
-            commit_id = dependencies[0].split("=")[2].replace("*", "")
-            output_path = "./output/" + version + "/" + commit_id
-        run_test(scheduler_file, output_path, args, run_time, commit_id, version)
+        test_spark = False
+        test_python = False
+        if args.python is not None:
+            test_python = True
+        if args.spark is not None:
+            test_spark = True
 
-        with open(scheduler_file, "r") as f:
-            line = f.readline()
-            test_case_path = line.split(" ")[0].replace(line.split(" ")[0].split("/")[-1], "")
+        commit_id = tag_commit_build_time()
 
-        collect_result.gen_data_path()
+        run_test(scheduler_file, commit_id, test_spark, test_python)
+
+        with open(conda_env_file, "r") as f:
+            if f.readline() != "":
+                switch_conda_environment(conda_env_file)
+
+        test_list = []
+        if test_python:
+            test_list.append("python")
+        if test_spark:
+            test_list.append("spark")
+        collect_result.gen_data_path(test_list)
         gen_html.gen_html()
-    # Todo: draw web map
