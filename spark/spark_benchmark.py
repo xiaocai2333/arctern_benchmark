@@ -64,6 +64,7 @@ def write_output_time(output_file, test_time):
 
 
 if __name__ == '__main__':
+# def spark_test(output_file, run_times, version_commit, user_module):
     from arctern_pyspark import register_funcs
 
     parse = argparse.ArgumentParser()
@@ -80,45 +81,39 @@ if __name__ == '__main__':
 
     user_module = importlib.import_module("test_case." + (source_file.split(".")[0]).replace("/", "."),
                                           "test_case/" + source_file)
-    spark_session = SparkSession \
+    spark = SparkSession \
         .builder \
         .appName("Python Arrow-in-Spark example") \
         .getOrCreate()
-    spark_session.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-    conda_prefix = sys.prefix
-    spark_session.conf.set("spark.executorEnv.PROJ_LIB", conda_prefix + "/share/proj")
-    spark_session.conf.set("spark.executorEnv.GDAL_DATA", conda_prefix + "/share/gdal")
-    spark_session.conf.set("PYSPARK_PYTHON", conda_prefix + "/bin/python")
+    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
 
-    register_funcs(spark_session)
-
+    register_funcs(spark)
+    print(sys.prefix)
     all_time_info = {"version": version_commit.split("-")[0], "commit_id": version_commit.split("-")[-1],
                      "func_name": user_module.func_name}
 
+    data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
+        user_module.schema).load(user_module.csv_path).cache()
+    data_df.createOrReplaceTempView(user_module.table_name)
+
     if hasattr(user_module, "spark_test"):
-        data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
-            user_module.schema).load(user_module.csv_path).cache()
-        data_df.createOrReplaceTempView(user_module.table_name)
         for times in range(run_times):
             time_info = {}
             begin_time = time.time()
-            time_info["step"] = user_module.spark_test(spark_session)
+            time_info["step"] = user_module.spark_test(spark)
             end_time = time.time()
             time_info["total_time"] = round(end_time - begin_time, 4)
             all_time_info["%s" % str(times)] = time_info
         print(user_module.func_name + " spark test run done!")
 
     else:
-        data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
-            user_module.schema).load(user_module.csv_path).cache()
-        data_df.createOrReplaceTempView(user_module.table_name)
+        result_df = spark.sql(user_module.sql % (*user_module.col_name, user_module.table_name))
+        result_df.createOrReplaceTempView("result")
         for times in range(run_times):
             time_info = {}
             begin_time = time.time()
-            result_df = spark_session.sql(user_module.sql % (*user_module.col_name, user_module.table_name))
-            result_df.createOrReplaceTempView("result")
-            spark_session.sql("cache table result")
-            spark_session.sql("uncache table result")
+            spark.sql("cache table result")
+            spark.sql("uncache table result")
             end_time = time.time()
             time_info["total_time"] = round(end_time - begin_time, 4)
             time_step = {"step": round(end_time - begin_time, 4)}

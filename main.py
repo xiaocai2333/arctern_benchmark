@@ -17,6 +17,7 @@ import importlib
 import os
 import sys
 import yaml
+from spark import spark_benchmark
 from python import python_benchmark
 from gen_html import collect_result, gen_html
 
@@ -56,12 +57,52 @@ def switch_conda_environment(conda_environment_file):
                 sys.argv[n+1] = "False"
         print(exec_python_path)
         os.execlp(exec_python_path, "arctern test", *sys.argv)
+        sys.exit(0)
     else:
         print("create conda environment failed!")
         sys.exit(1)
 
 
-def spark_test(output_file, source_file, run_times, commit_id):
+def conf_spark_env():
+    import re
+    spark_submit_path = os.popen("which spark-submit").read().replace("\n", "")
+    spark_conf_path = os.path.join("/".join(spark_submit_path.split("/")[0:-1]), "../conf")
+    conf_env_path = sys.prefix
+    spark_env_f = open(spark_conf_path + "/spark-env.sh", "r+")
+    source_env_text = spark_env_f.readlines()
+    pyspark_path_exist = False
+    for i in range(len(source_env_text)):
+        if re.search("PYSPARK_PYTHON", source_env_text[i]):
+            source_env_text[i] = "export PYSPARK_PYTHON=%s/bin/python" % conf_env_path
+            pyspark_path_exist = True
+    if not pyspark_path_exist:
+        source_env_text.append("export PYSPARK_PYTHON=%s/bin/python" % conf_env_path)
+    target_env_file = open(spark_conf_path + "/spark-env.sh", "w+")
+    target_env_file.writelines(source_env_text)
+    target_env_file.close()
+
+    spark_default_f = open(spark_conf_path + "/spark-defaults.conf", "r+")
+    source_default_text = spark_default_f.readlines()
+    proj_exist = False
+    gdal_exist = False
+    for i in range(len(source_default_text)):
+        if re.search("spark.executorEnv.PROJ_LIB", source_default_text[i]):
+            source_default_text[i] = "spark.executorEnv.PROJ_LIB %s/share/proj" % conf_env_path
+            proj_exist = True
+        if re.search("spark.executorEnv.PROJ_LIB", source_default_text[i]):
+            source_default_text[i] = "spark.executorEnv.GDAL_DATA %s/share/gdal" % conf_env_path
+            gdal_exist = True
+    if not proj_exist:
+        source_default_text.append("spark.executorEnv.PROJ_LIB %s/share/proj" % conf_env_path)
+    if not gdal_exist:
+        source_default_text.append("spark.executorEnv.GDAL_DATA %s/share/gdal" % conf_env_path)
+    target_default__file = open(spark_conf_path + "/spark-defaults.conf", "w+")
+    target_default__file.writelines(source_default_text)
+    target_default__file.close()
+
+
+def spark_test(source_file, output_file, run_times, commit_id):
+    conf_spark_env()
     command = "spark-submit ./spark/spark_benchmark.py -s %s -o %s -t %s -v %s" % (
         source_file, output_file, run_times, commit_id)
     print(command)
@@ -88,8 +129,12 @@ def run_test(scheduler_file, commit_id, test_spark, test_python):
             user_module = importlib.import_module("test_case." + (source_file.split(".")[0]).replace("/", "."),
                                                   "test_case/" + source_file)
 
+            # if test_spark:
+            #     spark_benchmark.spark_test(out_spark_path + output_file.split("/")[-1].replace("\n", ""),
+            #                                run_time, commit_id, user_module)
             if test_spark:
-                spark_test(out_spark_path + output_file.split("/")[-1].replace("\n", ""), source_file, run_time, commit_id)
+                spark_test(source_file, out_spark_path + output_file.split("/")[-1].replace("\n", ""),
+                           run_time, commit_id)
 
             if test_python:
                 python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1].replace("\n", ""),
