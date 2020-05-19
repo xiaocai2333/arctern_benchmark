@@ -1,9 +1,0 @@
-channels:
-- conda-forge
-- arctern-dev
-dependencies:
-- libarctern=0.1.1=600cc1f62b1b98f63c9fa743fda41348b3913cf7*
-- arctern=0.1.1=600cc1f62b1b98f63c9fa743fda41348b3913cf7*
-- arctern-spark=0.1.1=600cc1f62b1b98f63c9fa743fda41348b3913cf7*
-- pyyaml
-name: 0.1.1-600cc1f62b1b98f63c9fa743fda41348b3913cf7
