@@ -55,31 +55,35 @@ setattr(builtins, "TIME_INFO", TIME_INFO)
 
 def data_proc(csv_path, col_num):
     data_list = []
+    for i in range(col_num):
+        locals()["data_%s" % i] = []
     with open(csv_path, "r") as csv_file:
         spreader = csv.reader(csv_file, delimiter="|", quotechar="|")
-        for i in range(col_num):
-            data = []
-            for row in spreader:
+        for row in spreader:
+            for i in range(col_num):
                 if col_num == 4:
-                    data.append(float(row[i]))
+                    locals()["data_%s" % i].append(float(row[i]))
                 else:
-                    data.append(row[i])
-            data_list.append(pd.Series(data))
+                    locals()["data_%s" % i].append(row[i])
+            # print(data)
+    for i in range(col_num):
+        data_list.append(pd.Series(locals()["data_%s" % i]))
     return data_list
 
 
-def python_test(output_file, user_module, run_time, commit_id, version):
+def python_test(output_file, user_module, run_time, commit_id):
 
     if not hasattr(user_module, "python_test"):
         print("Please write python_test function in your %s!" % user_module.__name__)
         sys.exit(0)
 
     if hasattr(user_module, "data_proc"):
-        data = user_module.data_proc(user_module.csv_path, user_module.col_num)
+        data = user_module.data_proc()
     else:
         data = data_proc(user_module.csv_path, user_module.col_num)
 
-    all_time_info = {"version": version, "commit_id": commit_id, "func_name": user_module.func_name}
+    all_time_info = {"version": commit_id.split("-")[0], "commit_id": commit_id.split("-")[-1],
+                     "func_name": user_module.func_name}
     for times in range(run_time):
         time_info = {}
         begin_time = time.time()

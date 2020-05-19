@@ -15,9 +15,18 @@
 
 import arctern
 
+func_name = "st_npoints"
 csv_path = "data/single_col.csv"
 col_num = 1
+col_name = ["geos"]
+schema = "geos string"
+
+sql = "select ST_NPoints(ST_GeomFromText(%s)) from %s"
 
 
-def run(data):
+def python_test(data):
+    TIME_START(func_name)
     arctern.ST_NPoints(arctern.ST_GeomFromText(data))
+    TIME_END(func_name)
+
+    return TIME_INFO()

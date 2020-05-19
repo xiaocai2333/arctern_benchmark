@@ -15,16 +15,23 @@
 
 import arctern
 
+func_name = "st_polygon_from_envelope"
 csv_path = "data/st_polygon_from_envelope.csv"
 col_num = 4
+col_name = ["x_min", "y_min", "x_max", "y_max"]
+schema = "x_min double, y_min double, x_max double, y_max double"
 
-def data_proc(csv_path):
+sql = "select ST_AsText(ST_PolygonFromEnvelope(%s, %s, %s, %s)) from %s"
+
+
+def data_proc():
     import csv
     import pandas as pd
     x_min = []
     x_max = []
     y_min = []
     y_max = []
+    data = []
     with open(csv_path, "r") as csv_file:
         spreader = csv.reader(csv_file, delimiter="|", quotechar="|")
         for row in spreader:
@@ -32,8 +39,16 @@ def data_proc(csv_path):
             y_min.append(float(row[1]))
             x_max.append(float(row[2]))
             y_max.append(float(row[3]))
-    return pd.Series(x_min), pd.Series(y_min), pd.Series(x_max), pd.Series(y_max)
+    data.append(pd.Series(x_min))
+    data.append(pd.Series(y_min))
+    data.append(pd.Series(x_max))
+    data.append(pd.Series(x_max))
+    return data
 
 
-def run(x_min, y_min, x_max, y_max):
+def python_test(x_min, y_min, x_max, y_max):
+    TIME_START(func_name)
     arctern.ST_AsText(arctern.ST_PolygonFromEnvelope(x_min, y_min, x_max, y_max))
+    TIME_END(func_name)
+
+    return TIME_INFO()
