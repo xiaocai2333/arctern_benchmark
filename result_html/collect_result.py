@@ -37,7 +37,7 @@ def order_version_by_built_time(all_version_commit_id):
     commit_ids = []
     import ast
     eval = ast.literal_eval
-    with open("gen_html/version_build_time.txt", "r") as commit_f:
+    with open("result_html/version_build_time.txt", "r") as commit_f:
         for line in commit_f.readlines():
             line = "".join(line)
             line = line or "{}"
@@ -50,14 +50,14 @@ def order_version_by_built_time(all_version_commit_id):
                 commit_id_build_time[i], commit_id_build_time[j] = commit_id_build_time[j], commit_id_build_time[i]
                 commit_ids[i], commit_ids[j] = commit_ids[j], commit_ids[i]
 
-    import re
-    out_commit_ids = []
-    for commit_id in commit_ids:
-        for version_commit_id in all_version_commit_id:
-            if re.search(commit_id, version_commit_id):
-                out_commit_ids.append(version_commit_id)
+    # import re
+    # out_commit_ids = []
+    # for commit_id in commit_ids:
+    #     for version_commit_id in all_version_commit_id:
+    #         if re.search(commit_id, version_commit_id):
+    #             out_commit_ids.append(version_commit_id)
 
-    return out_commit_ids
+    return commit_ids
 
 
 def extract_all_pref(test_list):
@@ -125,6 +125,6 @@ def gen_data_path(test_list):
         file_dict = {"REP_NODES": all_version_commit_id, "REP_SET_NAMES": test_list,
                      "REP_DATASETS": all_case_time[i],
                      "REP_FUNC_NAMES": all_case_files[list(all_case_files.keys())[i]]}
-        with open("gen_html/data_path/" + list(all_case_files.keys())[i] + ".txt", "w") as data_f:
+        with open("result_html/data_path/" + list(all_case_files.keys())[i] + ".txt", "w") as data_f:
             data_f.write(str(file_dict))
 

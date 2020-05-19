@@ -19,7 +19,6 @@ import sys
 import subprocess
 import yaml
 from python import python_benchmark
-from gen_html import collect_result, gen_html
 
 
 def switch_conda_environment(version, commit_id):
@@ -102,10 +101,9 @@ def spark_test(source_file, output_file, run_times, commit_id):
     os.system(command)
 
 
-def run_test(scheduler_file, commit_id, test_spark, test_python):
+def run_test(scheduler_file, version_commit_id, test_spark, test_python):
 
-    output_path = "output/" + commit_id
-
+    output_path = "output/" + version_commit_id
     with open(scheduler_file, "r") as f:
         for line in f:
             source_file = line.split(" ")[0]
@@ -124,11 +122,11 @@ def run_test(scheduler_file, commit_id, test_spark, test_python):
 
             if test_spark:
                 spark_test(source_file, out_spark_path + output_file.split("/")[-1].replace("\n", ""),
-                           run_time, commit_id)
+                           run_time, version_commit_id)
 
             if test_python:
                 python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1].replace("\n", ""),
-                                             user_module, run_time, commit_id)
+                                             user_module, run_time, version_commit_id)
 
 
 def tag_commit_build_time():
@@ -144,20 +142,28 @@ def tag_commit_build_time():
     version_build_time = {"build_time": build_time,
                           "commit_id": commit_id}
 
-    with open("gen_html/version_build_time.txt", "a+") as file:
-        file.writelines(str(version_build_time) + "\n")
+    f = open("result_html/version_build_time.txt", "r")
+    lines = f.readlines()
+    version_exist = False
+    for line in lines:
+        if re.search(str(version_build_time), line):
+            version_exist = True
 
-    return commit_id
+    with open("result_html/version_build_time.txt", "w+") as file:
+        file.writelines(lines)
+        if not version_exist:
+            file.writelines(str(version_build_time) + "\n")
 
 
 if __name__ == "__main__":
     parse = argparse.ArgumentParser()
     parse.add_argument('-f --file', dest='file', nargs=1, default=None)
-    parse.add_argument('-v --conda_env', dest='conda_env', nargs=1)
     parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=False)
-    parse.add_argument('-p --python', dest="python", nargs='*')
-    parse.add_argument('-s --spark', dest="spark", nargs='*')
-    parse.add_argument('-t --time', dest='time', nargs=1)
+    parse.add_argument('--python', dest="python", nargs='*')
+    parse.add_argument('--spark', dest="spark", nargs='*')
+    parse.add_argument('--times', dest='times', nargs=1)
+    parse.add_argument('-v --version', dest='version', nargs=1)
+    parse.add_argument('--commit_id', dest='commit_id', nargs=1)
 
     args = parse.parse_args()
 
@@ -166,10 +172,9 @@ if __name__ == "__main__":
     else:
         switch_env = False
 
-    conda_env_commit_id = args.conda_env[0]
-    run_time = eval(args.time[0])
-    version = conda_env_commit_id.split("=")[0]
-    commit_id = conda_env_commit_id.split("=")[-1]
+    run_time = eval(args.times[0])
+    version = args.version[0]
+    commit_id = args.commit_id[0]
     if switch_env:
         switch_conda_environment(version, commit_id)
     else:
@@ -184,14 +189,5 @@ if __name__ == "__main__":
         if args.spark is not None:
             test_spark = True
 
-        commit_id = tag_commit_build_time()
-
-        run_test(scheduler_file, commit_id, test_spark, test_python)
-
-        test_list = []
-        if test_python:
-            test_list.append("python")
-        if test_spark:
-            test_list.append("spark")
-        collect_result.gen_data_path(test_list)
-        gen_html.gen_html()
+        tag_commit_build_time()
+        run_test(scheduler_file, version + "-" + commit_id, test_spark, test_python)

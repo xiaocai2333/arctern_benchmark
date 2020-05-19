@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import os
+from result_html import collect_result
 
 REP_KEYS_MAP = {
-    "perf":('ROWS', 'REP_SET_NAMES', 'REP_DATASETS', 'REP_FUNC_NAMES'),
+    "perf": ('ROWS', 'REP_SET_NAMES', 'REP_DATASETS', 'REP_FUNC_NAMES'),
     "scale": ('REP_NODES', 'REP_SET_NAMES', 'REP_DATASETS', 'REP_FUNC_NAMES'),
 }
 
@@ -47,13 +48,19 @@ def read_and_replace(data_path, mode, template_path, output_path):
 
 def gen_html():
     mode = "scale"
-    template_path = "gen_html/perf_scale.template"
-    data_path = "gen_html/data_path"
-    output_path = "gen_html/html"
+    template_path = "result_html/perf_scale.template"
+    data_path = "result_html/data_path"
+    output_path = "result_html/"
     for file in os.listdir(data_path):
         data_file = os.path.join(data_path, file)
         output_file = os.path.join(output_path, file.replace(".txt", ".html"))
         read_and_replace(data_file, mode, template_path, output_file)
+
+
+if __name__ == "__main__":
+    test_list = ["python", "spark"]
+    collect_result.gen_data_path(test_list)
+    gen_html()
 
 
 
