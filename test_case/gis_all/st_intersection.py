@@ -15,9 +15,18 @@
 
 import arctern
 
+func_name = "st_intersection"
 csv_path = "data/double_col.csv"
 col_num = 2
+col_name = ["left", "right"]
+schema = "left string, right string"
+
+sql = "select ST_AsText(ST_Intersection(ST_GeomFromText(%s), ST_GeomFromText(%s))) from %s"
 
 
-def run(data1, data2):
+def python_test(data1, data2):
+    TIME_START(func_name)
     arctern.ST_AsText(arctern.ST_Intersection(arctern.ST_GeomFromText(data1), arctern.ST_GeomFromText(data2)))
+    TIME_END(func_name)
+
+    return TIME_INFO()

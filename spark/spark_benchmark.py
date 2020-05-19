@@ -88,13 +88,12 @@ if __name__ == '__main__':
     spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
 
     register_funcs(spark)
-    print(sys.prefix)
     all_time_info = {"version": version_commit.split("-")[0], "commit_id": version_commit.split("-")[-1],
                      "func_name": user_module.func_name}
 
     data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
         user_module.schema).load(user_module.csv_path).cache()
-    data_df.createOrReplaceTempView(user_module.table_name)
+    data_df.createOrReplaceTempView(user_module.func_name)
 
     if hasattr(user_module, "spark_test"):
         for times in range(run_times):
@@ -107,7 +106,7 @@ if __name__ == '__main__':
         print(user_module.func_name + " spark test run done!")
 
     else:
-        result_df = spark.sql(user_module.sql % (*user_module.col_name, user_module.table_name))
+        result_df = spark.sql(user_module.sql % (*user_module.col_name, user_module.func_name))
         result_df.createOrReplaceTempView("result")
         for times in range(run_times):
             time_info = {}

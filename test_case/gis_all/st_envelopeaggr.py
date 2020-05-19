@@ -15,9 +15,18 @@
 
 import arctern
 
+func_name = "st_envelope_aggr"
 csv_path = "data/single_polygon.csv"
 col_num = 1
+col_name = ["geos"]
+schema = "geos string"
+
+sql = "select ST_AsText(ST_Envelope_Aggr(ST_GeomFromText(%s))) from %s"
 
 
-def run(data):
+def python_test(data):
+    TIME_START(func_name)
     arctern.ST_AsText(arctern.ST_Envelope_Aggr(arctern.ST_GeomFromText(data)))
+    TIME_END(func_name)
+
+    return TIME_INFO()

@@ -135,4 +135,4 @@ dmypy.json
 output/*
 gen_html/data_path/*
 gen_html/html/*.html
-
+gen_html/version_build_time.txt

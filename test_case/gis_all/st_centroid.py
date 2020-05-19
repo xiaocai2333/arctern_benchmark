@@ -24,16 +24,19 @@ schema = "geos string"
 sql = "select ST_AsText(ST_Centroid(ST_GeomFromText(%s))) from %s"
 
 
-def spark_test(spark, csv_path):
-    data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
-        "geos string").load(csv_path).cache()
-    data_df.createOrReplaceTempView("st_centroid")
-    sql = "select ST_AsText(ST_Centroid(ST_GeomFromText(geos))) from st_centroid"
-    result_df = spark.sql(sql)
+def spark_test(spark):
+    TIME_START(func_name)
+    result_df = spark.sql(sql % (*col_name, func_name))
     result_df.createOrReplaceTempView("result")
     spark.sql("cache table result")
     spark.sql("uncache table result")
+    TIME_END(func_name)
+
+    return TIME_INFO()
 
 
 def python_test(data):
+    TIME_START(func_name)
     arctern.ST_AsText(arctern.ST_Centroid(arctern.ST_GeomFromText(data)))
+    TIME_END(func_name)
+    return TIME_INFO()

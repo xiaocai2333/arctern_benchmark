@@ -16,8 +16,8 @@ import argparse
 import importlib
 import os
 import sys
+import subprocess
 import yaml
-from spark import spark_benchmark
 from python import python_benchmark
 from gen_html import collect_result, gen_html
 
@@ -38,8 +38,7 @@ def switch_conda_environment(conda_environment_file):
         conda_env_f.write(yaml_obj)
 
     status = os.system("conda env create -f conf/arctern.yaml")
-
-    if status >= 0:
+    if status in [0, 256]:
         original_conda_file = open("conf/arctern_version.conf", "r")
         original_conda_env_list = original_conda_file.readlines()
         delete_current_conda_env_file = open("conf/arctern_version.conf", "w")
@@ -47,15 +46,14 @@ def switch_conda_environment(conda_environment_file):
         delete_current_conda_env_file.write(delete_current_conda_env_list)
         original_conda_file.close()
         delete_current_conda_env_file.close()
-        conda_prefix = os.popen("conda env list | grep %s" % conda_env_name).read().split(" ")[-1].replace(
-            "\n", "")
+        conda_prefix = subprocess.check_output("conda env list | grep %s" % conda_env_name, shell=True).decode(
+            'utf-8').split(" ")[-1].replace("\n", "")
         exec_python_path = conda_prefix + "/bin/python"
         for n, e in enumerate(sys.argv):
             if e == "-w":
                 sys.argv[n + 1] = "False"
             if e == "-c":
                 sys.argv[n+1] = "False"
-        print(exec_python_path)
         os.execlp(exec_python_path, "arctern test", *sys.argv)
         sys.exit(0)
     else:
@@ -65,7 +63,7 @@ def switch_conda_environment(conda_environment_file):
 
 def conf_spark_env():
     import re
-    spark_submit_path = os.popen("which spark-submit").read().replace("\n", "")
+    spark_submit_path = subprocess.check_output("which spark-submit", shell=True).decode('utf-8').replace("\n", "")
     spark_conf_path = os.path.join("/".join(spark_submit_path.split("/")[0:-1]), "../conf")
     conf_env_path = sys.prefix
     spark_env_f = open(spark_conf_path + "/spark-env.sh", "r+")
@@ -105,7 +103,6 @@ def spark_test(source_file, output_file, run_times, commit_id):
     conf_spark_env()
     command = "spark-submit ./spark/spark_benchmark.py -s %s -o %s -t %s -v %s" % (
         source_file, output_file, run_times, commit_id)
-    print(command)
     os.system(command)
 
 
@@ -129,9 +126,6 @@ def run_test(scheduler_file, commit_id, test_spark, test_python):
             user_module = importlib.import_module("test_case." + (source_file.split(".")[0]).replace("/", "."),
                                                   "test_case/" + source_file)
 
-            # if test_spark:
-            #     spark_benchmark.spark_test(out_spark_path + output_file.split("/")[-1].replace("\n", ""),
-            #                                run_time, commit_id, user_module)
             if test_spark:
                 spark_test(source_file, out_spark_path + output_file.split("/")[-1].replace("\n", ""),
                            run_time, commit_id)
@@ -145,7 +139,6 @@ def tag_commit_build_time():
     import arctern
     import re
     version_info = arctern.version().split("\n")
-    print(version_info)
     build_time = ""
     commit_id = sys.prefix.replace("\n", "").split("/")[-1]
     for info in version_info:
@@ -179,7 +172,6 @@ if __name__ == "__main__":
         switch_env = False
 
     conda_env_file = "conf/arctern_version.conf"
-    print(sys.prefix)
     run_time = eval(args.time[0])
     if eval(args.copy_conf[0]):
         os.system("cp conf/arctern.conf %s" % conda_env_file)

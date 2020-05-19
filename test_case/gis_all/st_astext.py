@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import arctern
+
 func_name = "st_astext"
 csv_path = "data/single_polygon.csv"
 col_num = 1
 col_name = ["geos"]
 schema = "geos string"
-table_name = "st_astext"
 
 sql = "select ST_AsText(ST_PolygonFromText(%s)) from %s"
 
@@ -34,4 +35,7 @@ sql = "select ST_AsText(ST_PolygonFromText(%s)) from %s"
 
 
 def python_test(data):
+    TIME_START(func_name)
     arctern.ST_AsText(data)
+    TIME_END(func_name)
+    return TIME_INFO()

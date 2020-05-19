@@ -15,9 +15,18 @@
 
 import arctern
 
+func_name = "st_geom_from_geojson"
 csv_path = "data/st_geomfromgeojson.csv"
 col_num = 1
+col_name = ["geos"]
+schema = "geos string"
+
+sql = "select ST_AsText(ST_GeomFromGeoJSON(%s)) from %s"
 
 
-def run(data):
+def python_test(data):
+    TIME_START(func_name)
     arctern.ST_AsText(arctern.ST_GeomFromGeoJSON(data))
+    TIME_END(func_name)
+
+    return TIME_INFO()

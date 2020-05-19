@@ -19,7 +19,6 @@ csv_path = "data/single_polygon.csv"
 col_num = 1
 col_name = ["geos"]
 schema = "geos string"
-table_name = "st_area"
 
 sql = "select ST_Area(ST_GeomFromText(%s)) from %s"
 
@@ -34,7 +33,7 @@ sql = "select ST_Area(ST_GeomFromText(%s)) from %s"
 #     spark.sql("uncache table result")
 
 def python_test(data):
-    TIME_START("st_area")
+    TIME_START(func_name)
     arctern.ST_Area(arctern.ST_GeomFromText(data))
-    TIME_END("st_area")
+    TIME_END(func_name)
     return TIME_INFO()
