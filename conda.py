@@ -17,7 +17,24 @@ import sys, os, subprocess
 __all__ = [
     "create_conda_env",
     "get_conda_prefix",
+    "extract_arctern_build_info",
 ]
+
+def extract_arctern_build_info():
+    import arctern
+    import re
+
+    version_info = arctern.version().split("\n")
+    build_time = ""
+    commit_id = sys.prefix.replace("\n", "").split("/")[-1]
+    for info in version_info:
+        if re.search("build time", info):
+            build_time = info.replace("build time : ", "")
+
+    build_info = {"build_time": build_time,
+                          "commit_id": commit_id}
+
+    return build_info
 
 def create_conda_env(version, commit_id="", is_spark=False, is_gpu=False, channel="arctern-dev", conda_label=""):
 

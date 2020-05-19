@@ -21,45 +21,16 @@ import yaml
 from python import python_benchmark
 from gen_html import collect_result, gen_html
 
+from .conda import create_conda_env, get_conda_prefix, extract_arctern_build_info
 
-def switch_conda_environment(conda_environment_file):
-    with open(conda_environment_file, "r") as env_f:
-        commit_info = env_f.readline()
-    version = commit_info.split("=")[0]
-    commit_id = commit_info.split("=")[-1].replace("\n", "")
-    conda_env_name = (version + "-" + commit_id).replace("*", "")
-    conda_env_dict = {"name": conda_env_name, "channels": ["conda-forge", "arctern-dev"],
-                      "dependencies": ["libarctern=" + version + "=" + commit_id,
-                                       "arctern=" + version + "=" + commit_id,
-                                       "arctern-spark=" + version + "=" + commit_id,
-                                       "pyyaml"]}
-    with open("conf/arctern.yaml", "w") as conda_env_f:
-        yaml_obj = yaml.dump(conda_env_dict)
-        conda_env_f.write(yaml_obj)
-
-    status = os.system("conda env create -f conf/arctern.yaml")
-    if status in [0, 256]:
-        original_conda_file = open("conf/arctern_version.conf", "r")
-        original_conda_env_list = original_conda_file.readlines()
-        delete_current_conda_env_file = open("conf/arctern_version.conf", "w")
-        delete_current_conda_env_list = "".join(original_conda_env_list[1:])
-        delete_current_conda_env_file.write(delete_current_conda_env_list)
-        original_conda_file.close()
-        delete_current_conda_env_file.close()
-        conda_prefix = subprocess.check_output("conda env list | grep %s" % conda_env_name, shell=True).decode(
-            'utf-8').split(" ")[-1].replace("\n", "")
-        exec_python_path = conda_prefix + "/bin/python"
-        for n, e in enumerate(sys.argv):
-            if e == "-w":
-                sys.argv[n + 1] = "False"
-            if e == "-c":
-                sys.argv[n+1] = "False"
-        os.execlp(exec_python_path, "arctern test", *sys.argv)
-        sys.exit(0)
-    else:
-        print("create conda environment failed!")
-        sys.exit(1)
-
+def reboot(conda_prefix, argv):
+    exec_python_path = conda_prefix + "/bin/python"
+    for n, e in enumerate(argv):
+        if e == "-w":
+            argv[n + 1] = "False"
+        if e == "-c":
+            argv[n + 1] = "False"
+    os.execlp(exec_python_path, "arctern test", *argv)
 
 def conf_spark_env():
     import re
@@ -105,9 +76,7 @@ def spark_test(source_file, output_file, run_times, commit_id):
         source_file, output_file, run_times, commit_id)
     os.system(command)
 
-
 def run_test(scheduler_file, commit_id, test_spark, test_python):
-
     output_path = "output/" + commit_id
 
     with open(scheduler_file, "r") as f:
@@ -153,12 +122,11 @@ def tag_commit_build_time():
 
     return commit_id
 
-
-if __name__ == "__main__":
+def parse_args():
     parse = argparse.ArgumentParser()
     parse.add_argument('-f --file', dest='file', nargs=1, default=None)
     parse.add_argument('-v --conda_env', dest='conda_env', nargs='*')
-    parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=True)
+    parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=False)
     parse.add_argument('-p --python', dest="python", nargs='*')
     parse.add_argument('-s --spark', dest="spark", nargs='*')
     parse.add_argument('-t --time', dest='time', nargs=1)
@@ -171,14 +139,20 @@ if __name__ == "__main__":
     else:
         switch_env = False
 
+    return
+
+
+if __name__ == "__main__":
+    args = parse_args()
+
+
     conda_env_file = "conf/arctern_version.conf"
     run_time = eval(args.time[0])
     if eval(args.copy_conf[0]):
-        os.system("cp conf/arctern.conf %s" % conda_env_file)
         os.system("rm gen_html/version_build_time.txt")
 
     if switch_env:
-        switch_conda_environment(conda_env_file)
+        create_conda_env(conda_env_file)
     else:
         if args.file is not None:
             scheduler_file = args.file[0]
