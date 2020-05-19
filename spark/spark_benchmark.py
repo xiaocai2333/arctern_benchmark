@@ -18,8 +18,8 @@ import inspect
 import builtins
 import time
 import json
+import sys
 from pyspark.sql import SparkSession
-from arctern_pyspark import register_funcs
 
 
 def TIME_START(step):
@@ -64,56 +64,55 @@ def write_output_time(output_file, test_time):
 
 
 if __name__ == '__main__':
+# def spark_test(output_file, run_times, version_commit, user_module):
+    from arctern_pyspark import register_funcs
+
     parse = argparse.ArgumentParser()
     parse.add_argument('-s --source_file', dest='source_file', nargs=1)
     parse.add_argument('-o --output_file', dest='output_file', nargs=1)
     parse.add_argument('-t --run_times', dest='run_times', nargs=1)
-    parse.add_argument('-c --commit_id', dest='commit_id', nargs=1)
     parse.add_argument('-v --version', dest='version', nargs=1)
 
     args = parse.parse_args()
     source_file = args.source_file[0]
     output_file = args.output_file[0]
     run_times = int(args.run_times[0])
-    commit_id = args.commit_id[0]
-    version = args.version[0]
+    version_commit = args.version[0]
 
     user_module = importlib.import_module("test_case." + (source_file.split(".")[0]).replace("/", "."),
                                           "test_case/" + source_file)
-    spark_session = SparkSession \
+    spark = SparkSession \
         .builder \
         .appName("Python Arrow-in-Spark example") \
         .getOrCreate()
-    spark_session.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
 
-    register_funcs(spark_session)
+    register_funcs(spark)
+    all_time_info = {"version": version_commit.split("-")[0], "commit_id": version_commit.split("-")[-1],
+                     "func_name": user_module.func_name}
 
-    all_time_info = {"version": version, "commit_id": commit_id, "func_name": user_module.func_name}
+    data_df = spark.read.format("csv").option("header", False).option("delimiter", "|").schema(
+        user_module.schema).load(user_module.csv_path).cache()
+    data_df.createOrReplaceTempView(user_module.func_name)
 
     if hasattr(user_module, "spark_test"):
-        data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
-            user_module.schema).load(user_module.csv_path).cache()
-        data_df.createOrReplaceTempView(user_module.table_name)
         for times in range(run_times):
             time_info = {}
             begin_time = time.time()
-            time_info["step"] = user_module.spark_test(spark_session)
+            time_info["step"] = user_module.spark_test(spark)
             end_time = time.time()
             time_info["total_time"] = round(end_time - begin_time, 4)
             all_time_info["%s" % str(times)] = time_info
         print(user_module.func_name + " spark test run done!")
 
     else:
-        data_df = spark_session.read.format("csv").option("header", False).option("delimiter", "|").schema(
-            user_module.schema).load(user_module.csv_path).cache()
-        data_df.createOrReplaceTempView(user_module.table_name)
+        result_df = spark.sql(user_module.sql % (*user_module.col_name, user_module.func_name))
+        result_df.createOrReplaceTempView("result")
         for times in range(run_times):
             time_info = {}
             begin_time = time.time()
-            result_df = spark_session.sql(user_module.sql % (*user_module.col_name, user_module.table_name))
-            result_df.createOrReplaceTempView("result")
-            spark_session.sql("cache table result")
-            spark_session.sql("uncache table result")
+            spark.sql("cache table result")
+            spark.sql("uncache table result")
             end_time = time.time()
             time_info["total_time"] = round(end_time - begin_time, 4)
             time_step = {"step": round(end_time - begin_time, 4)}
@@ -123,5 +122,4 @@ if __name__ == '__main__':
         print(user_module.func_name + " spark test run done!")
 
     write_output_time(output_file, all_time_info)
-    # Todo: write out time to json file
 

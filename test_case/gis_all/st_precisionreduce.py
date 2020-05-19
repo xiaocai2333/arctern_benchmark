@@ -15,9 +15,18 @@
 
 import arctern
 
+func_name = "st_precision_reduce"
 csv_path = "data/single_polygon.csv"
 col_num = 1
+col_name = ["geos"]
+schema = "geos string"
+
+sql = "select ST_AsText(ST_PrecisionReduce(ST_GeomFromText(%s), 4)) from %s"
 
 
-def run(data):
+def python_test(data):
+    TIME_START(func_name)
     arctern.ST_AsText(arctern.ST_PrecisionReduce(arctern.ST_GeomFromText(data), 3))
+    TIME_END(func_name)
+
+    return TIME_INFO()

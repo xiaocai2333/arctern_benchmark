@@ -32,30 +32,49 @@ def read_file_calculate_time(file):
     return s / (len(total_time) - 1)
 
 
-def extract_all_pref():
-    all_version = []
-    all_version_path = []
-    for d in os.listdir("output"):
-        if os.path.isdir(os.path.join("output", d)):
-            all_version.append(d)
-            all_version_path.append(os.path.join("output", d))
-    all_commit_id = []
-    all_commit_id_path = []
-    for version in all_version_path:
-        for d in os.listdir(version):
-            if os.path.isdir(os.path.join(version, d)):
-                all_commit_id.append(d)
-                all_commit_id_path.append(os.path.join(version, d))
+def order_version_by_built_time(all_commit_id, all_build_time):
+    for i in range(len(all_commit_id)):
+        for j in range(i + 1, len(all_commit_id)):
+            if all_build_time[i] > all_build_time[j]:
+                all_build_time[i], all_build_time[j] = all_build_time[j], all_build_time[i]
+                all_commit_id[i], all_commit_id[j] = all_commit_id[j], all_commit_id[i]
 
-    python_output_path = [os.path.join(commit_id_path, "python") for commit_id_path in all_commit_id_path]
-    spark_output_path = [os.path.join(commit_id_path, "spark") for commit_id_path in all_commit_id_path]
-    test_suites = [path for path in os.listdir(python_output_path[0]) if os.path.isdir(os.path.join(python_output_path[0], path))]
-    return all_version, all_commit_id, python_output_path, spark_output_path, test_suites
+    return all_commit_id
 
 
-def pref_data():
+def extract_all_pref(test_list):
+    all_version_commit_id = []
+    all_version_commit_id_path = []
+    commit_id_build_time = []
+    import ast
+    eval = ast.literal_eval
+    with open("gen_html/version_build_time.txt", "r") as commit_f:
+        for line in commit_f.readlines():
+            line = "".join(line)
+            line = line or "{}"
+            commit_dict = eval("".join(line))
+            all_version_commit_id.append(commit_dict["commit_id"])
+            commit_id_build_time.append(commit_dict["build_time"])
 
-    all_version, all_commit_id, python_output_path, spark_output_path, test_suites = extract_all_pref()
+    all_version_commit_id = order_version_by_built_time(all_version_commit_id, commit_id_build_time)
+    for commit in all_version_commit_id:
+        all_version_commit_id_path.append(os.path.join("output", commit))
+
+    python_output_path = [os.path.join(commit_id_path, "python") for commit_id_path in all_version_commit_id_path]
+    spark_output_path = [os.path.join(commit_id_path, "spark") for commit_id_path in all_version_commit_id_path]
+    test_suites = []
+    if "python" in test_list:
+        test_suites = [path for path in os.listdir(python_output_path[0]) if os.path.isdir(
+            os.path.join(python_output_path[0], path))]
+    elif "spark" in test_list:
+        test_suites = [path for path in os.listdir(spark_output_path[0]) if os.path.isdir(
+            os.path.join(spark_output_path[0], path))]
+    return all_version_commit_id, python_output_path, spark_output_path, test_suites
+
+
+def pref_data(test_list):
+
+    all_version_commit_id, python_output_path, spark_output_path, test_suites = extract_all_pref(test_list)
 
     all_case_files = {}
     # all test cases and all files for each case for example
@@ -73,21 +92,30 @@ def pref_data():
             python_time = []
             spark_time = []
             for i in range(len(python_output_path)):
-                python_file = os.path.join(os.path.join(python_output_path[0], test_case), file + ".json")
-                spark_file = os.path.join(os.path.join(spark_output_path[0], test_case), file + ".json")
-                python_time.append(str(read_file_calculate_time(python_file)))
-                spark_time.append(str(read_file_calculate_time(spark_file)))
-            pre_file_time = ",".join(python_time) + ":" + ",".join(spark_time)
-            pre_case_all_file_time.append(pre_file_time)
+                if "python" in test_list:
+                    python_file = os.path.join(os.path.join(python_output_path[0], test_case), file + ".json")
+                    python_time.append(str(read_file_calculate_time(python_file)))
+                if "spark" in test_list:
+                    spark_file = os.path.join(os.path.join(spark_output_path[0], test_case), file + ".json")
+                    spark_time.append(str(read_file_calculate_time(spark_file)))
+
+            if "python" in test_list and "spark" in test_list:
+                pre_case_all_file_time.append(",".join(python_time) + ":" + ",".join(spark_time))
+            elif "python" in test_list and "spark" not in test_list:
+                pre_case_all_file_time.append(",".join(python_time))
+            elif "python" not in test_list and "spark" in test_list:
+                pre_case_all_file_time.append(",".join(spark_time))
+
         all_case_time.append(pre_case_all_file_time)
 
-    return all_version, all_commit_id, all_case_time, all_case_files
+    return all_version_commit_id, all_case_time, all_case_files
 
 
-def gen_data_path():
-    all_version, all_commit_id, all_case_time, all_case_files = pref_data()
+def gen_data_path(test_list):
+    all_version_commit_id, all_case_time, all_case_files = pref_data(test_list)
     for i in range(len(all_case_files)):
-        file_dict = {"REP_NODES": all_commit_id, "REP_SET_NAMES": ["python", "spark"], "REP_DATASETS": all_case_time[i],
+        file_dict = {"REP_NODES": all_version_commit_id, "REP_SET_NAMES": test_list,
+                     "REP_DATASETS": all_case_time[i],
                      "REP_FUNC_NAMES": all_case_files[list(all_case_files.keys())[i]]}
         with open("gen_html/data_path/" + list(all_case_files.keys())[i] + ".txt", "w") as data_f:
             data_f.write(str(file_dict))

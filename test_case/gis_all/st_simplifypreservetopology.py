@@ -15,9 +15,19 @@
 
 import arctern
 
+func_name = "st_simplify_preserve_topology"
 csv_path = "data/single_col.csv"
 col_num = 1
+col_name = ["geos"]
+schema = "geos string"
 
 
-def run(data):
+sql = "select ST_AsText(ST_SimplifyPreserveTopology(ST_GeomFromText(%s), 10)) from %s"
+
+
+def python_test(data):
+    TIME_START(func_name)
     arctern.ST_AsText(arctern.ST_SimplifyPreserveTopology(arctern.ST_GeomFromText(data), 10000))
+    TIME_END(func_name)
+
+    return TIME_INFO()

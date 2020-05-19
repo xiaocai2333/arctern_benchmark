@@ -15,22 +15,34 @@
 
 import arctern
 
+func_name = "st_point"
 csv_path = "data/st_point.csv"
 col_num = 2
+col_name = ["x", "y"]
+schema = "x double, y double"
+
+sql = "select ST_AsText(ST_Point(%s, %s)) from %s"
 
 
-def data_proc(csv_path):
+def data_proc():
     import csv
     import pandas as pd
     x = []
     y = []
+    data = []
     with open(csv_path, "r") as csv_file:
         spreader = csv.reader(csv_file, delimiter="|", quotechar="|")
         for row in spreader:
             x.append(float(row[0]))
             y.append(float(row[1]))
-    return pd.Series(x), pd.Series(y)
+    data.append(pd.Series(x))
+    data.append(pd.Series(y))
+    return data
 
 
-def run(data1, data2):
+def python_test(data1, data2):
+    TIME_START(func_name)
     arctern.ST_AsText(arctern.ST_Point(data1, data2))
+    TIME_END(func_name)
+
+    return TIME_INFO()

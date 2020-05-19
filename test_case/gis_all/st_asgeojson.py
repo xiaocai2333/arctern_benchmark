@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import arctern
+
 func_name = "st_asgeojson"
 csv_path = "data/st_geomfromgeojson.csv"
 col_num = 1
 col_name = ["geos"]
 schema = "geos string"
-table_name = "st_asgeojson"
 
 sql = "select ST_AsGeoJSON(ST_PolygonFromText(%s)) from %s"
 
@@ -34,4 +35,7 @@ sql = "select ST_AsGeoJSON(ST_PolygonFromText(%s)) from %s"
 
 
 def python_test(data):
+    TIME_START(func_name)
     arctern.ST_AsGeoJSON(arctern.ST_GeomFromGeoJSON(data))
+    TIME_END(func_name)
+    return TIME_INFO()
