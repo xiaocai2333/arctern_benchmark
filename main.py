@@ -22,11 +22,7 @@ from python import python_benchmark
 from gen_html import collect_result, gen_html
 
 
-def switch_conda_environment(conda_environment_file):
-    with open(conda_environment_file, "r") as env_f:
-        commit_info = env_f.readline()
-    version = commit_info.split("=")[0]
-    commit_id = commit_info.split("=")[-1].replace("\n", "")
+def switch_conda_environment(version, commit_id):
     conda_env_name = (version + "-" + commit_id).replace("*", "")
     conda_env_dict = {"name": conda_env_name, "channels": ["conda-forge", "arctern-dev"],
                       "dependencies": ["libarctern=" + version + "=" + commit_id,
@@ -157,12 +153,11 @@ def tag_commit_build_time():
 if __name__ == "__main__":
     parse = argparse.ArgumentParser()
     parse.add_argument('-f --file', dest='file', nargs=1, default=None)
-    parse.add_argument('-v --conda_env', dest='conda_env', nargs='*')
-    parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=True)
+    parse.add_argument('-v --conda_env', dest='conda_env', nargs=1)
+    parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=False)
     parse.add_argument('-p --python', dest="python", nargs='*')
     parse.add_argument('-s --spark', dest="spark", nargs='*')
     parse.add_argument('-t --time', dest='time', nargs=1)
-    parse.add_argument('-c --copy_conf', dest='copy_conf', nargs=1)
 
     args = parse.parse_args()
 
@@ -171,14 +166,12 @@ if __name__ == "__main__":
     else:
         switch_env = False
 
-    conda_env_file = "conf/arctern_version.conf"
+    conda_env_commit_id = args.conda_env[0]
     run_time = eval(args.time[0])
-    if eval(args.copy_conf[0]):
-        os.system("cp conf/arctern.conf %s" % conda_env_file)
-        os.system("rm gen_html/version_build_time.txt")
-
+    version = conda_env_commit_id.split("=")[0]
+    commit_id = conda_env_commit_id.split("=")[-1]
     if switch_env:
-        switch_conda_environment(conda_env_file)
+        switch_conda_environment(version, commit_id)
     else:
         if args.file is not None:
             scheduler_file = args.file[0]
@@ -194,10 +187,6 @@ if __name__ == "__main__":
         commit_id = tag_commit_build_time()
 
         run_test(scheduler_file, commit_id, test_spark, test_python)
-
-        with open(conda_env_file, "r") as f:
-            if f.readline() != "":
-                switch_conda_environment(conda_env_file)
 
         test_list = []
         if test_python:

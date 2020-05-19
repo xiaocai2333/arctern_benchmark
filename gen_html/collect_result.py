@@ -32,20 +32,9 @@ def read_file_calculate_time(file):
     return s / (len(total_time) - 1)
 
 
-def order_version_by_built_time(all_commit_id, all_build_time):
-    for i in range(len(all_commit_id)):
-        for j in range(i + 1, len(all_commit_id)):
-            if all_build_time[i] > all_build_time[j]:
-                all_build_time[i], all_build_time[j] = all_build_time[j], all_build_time[i]
-                all_commit_id[i], all_commit_id[j] = all_commit_id[j], all_commit_id[i]
-
-    return all_commit_id
-
-
-def extract_all_pref(test_list):
-    all_version_commit_id = []
-    all_version_commit_id_path = []
+def order_version_by_built_time(all_version_commit_id):
     commit_id_build_time = []
+    commit_ids = []
     import ast
     eval = ast.literal_eval
     with open("gen_html/version_build_time.txt", "r") as commit_f:
@@ -53,10 +42,29 @@ def extract_all_pref(test_list):
             line = "".join(line)
             line = line or "{}"
             commit_dict = eval("".join(line))
-            all_version_commit_id.append(commit_dict["commit_id"])
+            commit_ids.append(commit_dict["commit_id"])
             commit_id_build_time.append(commit_dict["build_time"])
+    for i in range(len(commit_ids)):
+        for j in range(i + 1, len(commit_ids)):
+            if commit_id_build_time[i] > commit_id_build_time[j]:
+                commit_id_build_time[i], commit_id_build_time[j] = commit_id_build_time[j], commit_id_build_time[i]
+                commit_ids[i], commit_ids[j] = commit_ids[j], commit_ids[i]
 
-    all_version_commit_id = order_version_by_built_time(all_version_commit_id, commit_id_build_time)
+    import re
+    out_commit_ids = []
+    for commit_id in commit_ids:
+        for version_commit_id in all_version_commit_id:
+            if re.search(commit_id, version_commit_id):
+                out_commit_ids.append(version_commit_id)
+
+    return out_commit_ids
+
+
+def extract_all_pref(test_list):
+    all_version_commit_id_path = []
+    all_version_commit_id = os.listdir("output")
+
+    all_version_commit_id = order_version_by_built_time(all_version_commit_id)
     for commit in all_version_commit_id:
         all_version_commit_id_path.append(os.path.join("output", commit))
 
