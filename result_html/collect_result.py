@@ -26,48 +26,41 @@ def read_file_calculate_time(file):
                 total_time.append(file_data[key]["total_time"])
             except ValueError:
                 pass
-    s = 0
-    for time in total_time[1:]:
-        s += time
-    return s / (len(total_time) - 1)
+
+    if len(total_time) == 1:
+        return total_time[0]
+    else:
+        s = 0
+        for time in total_time[1:]:
+            s += time
+        return s / (len(total_time) - 1)
 
 
-def order_version_by_built_time(all_version_commit_id):
-    commit_id_build_time = []
-    commit_ids = []
-    import ast
-    eval = ast.literal_eval
-    with open("result_html/version_build_time.txt", "r") as commit_f:
-        for line in commit_f.readlines():
-            line = "".join(line)
-            line = line or "{}"
-            commit_dict = eval("".join(line))
-            commit_ids.append(commit_dict["commit_id"])
-            commit_id_build_time.append(commit_dict["build_time"])
-    for i in range(len(commit_ids)):
-        for j in range(i + 1, len(commit_ids)):
-            if commit_id_build_time[i] > commit_id_build_time[j]:
-                commit_id_build_time[i], commit_id_build_time[j] = commit_id_build_time[j], commit_id_build_time[i]
-                commit_ids[i], commit_ids[j] = commit_ids[j], commit_ids[i]
+def order_version_by_built_time(all_commit_id_path, version_build_time):
+    for i in range(len(all_commit_id_path)):
+        for j in range(i + 1, len(all_commit_id_path)):
+            if version_build_time[i] > version_build_time[j]:
+                version_build_time[i], version_build_time[j] = version_build_time[j], version_build_time[i]
+                all_commit_id_path[i], all_commit_id_path[j] = all_commit_id_path[j], all_commit_id_path[i]
 
-    # import re
-    # out_commit_ids = []
-    # for commit_id in commit_ids:
-    #     for version_commit_id in all_version_commit_id:
-    #         if re.search(commit_id, version_commit_id):
-    #             out_commit_ids.append(version_commit_id)
-
-    return commit_ids
+    return all_commit_id_path
 
 
 def extract_all_pref(test_list):
     all_version_commit_id_path = []
     all_version_commit_id = os.listdir("output")
 
-    all_version_commit_id = order_version_by_built_time(all_version_commit_id)
+    # all_version_commit_id = order_version_by_built_time(all_version_commit_id)
     for commit in all_version_commit_id:
         all_version_commit_id_path.append(os.path.join("output", commit))
-
+    commit_build_time = []
+    for i in all_version_commit_id_path:
+        collect_build_time_path = os.path.join(os.path.join(i, "python"), os.listdir(os.path.join(i, "python"))[0])
+        collect_build_time_file = os.path.join(collect_build_time_path, os.listdir(collect_build_time_path)[0])
+        with open(collect_build_time_file, "r") as collect_time_f:
+            file_data = json.load(collect_time_f)
+            commit_build_time.append(file_data["build_time"])
+    all_version_commit_id_path = order_version_by_built_time(all_version_commit_id_path, commit_build_time)
     python_output_path = [os.path.join(commit_id_path, "python") for commit_id_path in all_version_commit_id_path]
     spark_output_path = [os.path.join(commit_id_path, "spark") for commit_id_path in all_version_commit_id_path]
     test_suites = []
@@ -101,10 +94,10 @@ def pref_data(test_list):
             spark_time = []
             for i in range(len(python_output_path)):
                 if "python" in test_list:
-                    python_file = os.path.join(os.path.join(python_output_path[0], test_case), file + ".json")
+                    python_file = os.path.join(os.path.join(python_output_path[i], test_case), file + ".json")
                     python_time.append(str(read_file_calculate_time(python_file)))
                 if "spark" in test_list:
-                    spark_file = os.path.join(os.path.join(spark_output_path[0], test_case), file + ".json")
+                    spark_file = os.path.join(os.path.join(spark_output_path[i], test_case), file + ".json")
                     spark_time.append(str(read_file_calculate_time(spark_file)))
 
             if "python" in test_list and "spark" in test_list:

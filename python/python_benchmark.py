@@ -92,6 +92,15 @@ def python_test(output_file, user_module, run_time, commit_id):
         time_info["total_time"] = round(end_time - begin_time, 4)
         all_time_info["%s" % str(times)] = time_info
 
+    import arctern
+    import re
+    version_info = arctern.version().split("\n")
+    build_time = ""
+    for info in version_info:
+        if re.search("build time", info):
+            build_time = info.replace("build time : ", "")
+
+    all_time_info["build_time"] = build_time
     with open(output_file, "w") as out:
         json_obj = json.dumps(all_time_info)
         out.write(json_obj)

@@ -129,32 +129,6 @@ def run_test(scheduler_file, version_commit_id, test_spark, test_python):
                                              user_module, run_time, version_commit_id)
 
 
-def tag_commit_build_time():
-    import arctern
-    import re
-    version_info = arctern.version().split("\n")
-    build_time = ""
-    commit_id = sys.prefix.replace("\n", "").split("/")[-1]
-    for info in version_info:
-        if re.search("build time", info):
-            build_time = info.replace("build time : ", "")
-
-    version_build_time = {"build_time": build_time,
-                          "commit_id": commit_id}
-
-    f = open("result_html/version_build_time.txt", "r")
-    lines = f.readlines()
-    version_exist = False
-    for line in lines:
-        if re.search(str(version_build_time), line):
-            version_exist = True
-
-    with open("result_html/version_build_time.txt", "w+") as file:
-        file.writelines(lines)
-        if not version_exist:
-            file.writelines(str(version_build_time) + "\n")
-
-
 if __name__ == "__main__":
     parse = argparse.ArgumentParser()
     parse.add_argument('-f --file', dest='file', nargs=1, default=None)
@@ -164,6 +138,7 @@ if __name__ == "__main__":
     parse.add_argument('--times', dest='times', nargs=1)
     parse.add_argument('-v --version', dest='version', nargs=1)
     parse.add_argument('--commit_id', dest='commit_id', nargs=1)
+    parse.add_argument('--gpu', dest='gpu', nargs=1)
 
     args = parse.parse_args()
 
@@ -189,5 +164,4 @@ if __name__ == "__main__":
         if args.spark is not None:
             test_spark = True
 
-        tag_commit_build_time()
         run_test(scheduler_file, version + "-" + commit_id, test_spark, test_python)
