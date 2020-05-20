@@ -70,9 +70,7 @@ def create_conda_env(version, commit_id="", is_spark=False, is_gpu=False, channe
         f"{get_libarctern_package()} "
         f"{get_arctern_package()} "
         f"{get_arcternspark_package()} "
-        # f"pyyaml "
     )
-    print(cmd)
     status = os.system(cmd)
     return status
 

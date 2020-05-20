@@ -19,7 +19,7 @@ import sys
 import subprocess
 
 from conda_conf import create_conda_env, get_conda_prefix, extract_arctern_build_info, hehe
-from python_test import python_test
+from python_benchmark import python_test
 
 
 def reboot(conda_prefix, argv):

@@ -117,6 +117,8 @@ def pref_data(test_list):
 
 def gen_data_path(test_list):
     all_version_commit_id, all_case_time, all_case_files = pref_data(test_list)
+    for i in range(len(all_version_commit_id)):
+        all_version_commit_id[i] = all_version_commit_id[i][0:14]
     for i in range(len(all_case_files)):
         file_dict = {"REP_NODES": all_version_commit_id, "REP_SET_NAMES": test_list,
                      "REP_DATASETS": all_case_time[i],

@@ -18,7 +18,6 @@ import inspect
 import builtins
 import time
 import json
-import sys
 from pyspark.sql import SparkSession
 
 
@@ -64,7 +63,6 @@ def write_output_time(output_file, test_time):
 
 
 if __name__ == '__main__':
-# def spark_test(output_file, run_times, version_commit, user_module):
     from arctern_pyspark import register_funcs
 
     parse = argparse.ArgumentParser()
