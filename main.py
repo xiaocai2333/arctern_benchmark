@@ -17,43 +17,18 @@ import importlib
 import os
 import sys
 import subprocess
-import yaml
-from python import python_benchmark
+
+from conda_conf import create_conda_env, get_conda_prefix, extract_arctern_build_info, hehe
+from python_test import python_test
 
 
-def switch_conda_environment(version, commit_id):
-    conda_env_name = (version + "-" + commit_id).replace("*", "")
-    conda_env_dict = {"name": conda_env_name, "channels": ["conda-forge", "arctern-dev"],
-                      "dependencies": ["libarctern=" + version + "=" + commit_id,
-                                       "arctern=" + version + "=" + commit_id,
-                                       "arctern-spark=" + version + "=" + commit_id,
-                                       "pyyaml"]}
-    with open("conf/arctern.yaml", "w") as conda_env_f:
-        yaml_obj = yaml.dump(conda_env_dict)
-        conda_env_f.write(yaml_obj)
-
-    status = os.system("conda env create -f conf/arctern.yaml")
-    if status in [0, 256]:
-        original_conda_file = open("conf/arctern_version.conf", "r")
-        original_conda_env_list = original_conda_file.readlines()
-        delete_current_conda_env_file = open("conf/arctern_version.conf", "w")
-        delete_current_conda_env_list = "".join(original_conda_env_list[1:])
-        delete_current_conda_env_file.write(delete_current_conda_env_list)
-        original_conda_file.close()
-        delete_current_conda_env_file.close()
-        conda_prefix = subprocess.check_output("conda env list | grep %s" % conda_env_name, shell=True).decode(
-            'utf-8').split(" ")[-1].replace("\n", "")
-        exec_python_path = conda_prefix + "/bin/python"
-        for n, e in enumerate(sys.argv):
-            if e == "-w":
-                sys.argv[n + 1] = "False"
-            if e == "-c":
-                sys.argv[n+1] = "False"
-        os.execlp(exec_python_path, "arctern test", *sys.argv)
-        sys.exit(0)
-    else:
-        print("create conda environment failed!")
-        sys.exit(1)
+def reboot(conda_prefix, argv):
+    print(conda_prefix)
+    exec_python_path = conda_prefix + "/bin/python"
+    for n, e in enumerate(argv):
+        if e == "-w":
+            argv[n + 1] = "False"
+    os.execlp(exec_python_path, "arctern test", *argv)
 
 
 def conf_spark_env():
@@ -96,13 +71,13 @@ def conf_spark_env():
 
 def spark_test(source_file, output_file, run_times, commit_id):
     conf_spark_env()
-    command = "spark-submit ./spark/spark_benchmark.py -s %s -o %s -t %s -v %s" % (
+    command = "spark-submit ./spark_benchmark.py -s %s -o %s -t %s -v %s" % (
         source_file, output_file, run_times, commit_id)
     os.system(command)
 
 
-def run_test(scheduler_file, version_commit_id, test_spark, test_python):
-
+def run_test(scheduler_file, version, commit_id, test_spark, test_python):
+    version_commit_id = version + "-" + commit_id
     output_path = "output/" + version_commit_id
     with open(scheduler_file, "r") as f:
         for line in f:
@@ -125,43 +100,54 @@ def run_test(scheduler_file, version_commit_id, test_spark, test_python):
                            run_time, version_commit_id)
 
             if test_python:
-                python_benchmark.python_test(out_python_path + "/" + output_file.split("/")[-1].replace("\n", ""),
+                python_test(out_python_path + "/" + output_file.split("/")[-1].replace("\n", ""),
                                              user_module, run_time, version_commit_id)
 
 
-if __name__ == "__main__":
+def parse_args():
     parse = argparse.ArgumentParser()
     parse.add_argument('-f --file', dest='file', nargs=1, default=None)
-    parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=False)
     parse.add_argument('--python', dest="python", nargs='*')
     parse.add_argument('--spark', dest="spark", nargs='*')
+    parse.add_argument('-w --switch_env', dest='switch_env', nargs=1, default=False)
     parse.add_argument('--times', dest='times', nargs=1)
     parse.add_argument('-v --version', dest='version', nargs=1)
     parse.add_argument('--commit_id', dest='commit_id', nargs=1)
-    parse.add_argument('--gpu', dest='gpu', nargs=1)
+    parse.add_argument('--gpu', dest='gpu', nargs='*')
 
     args = parse.parse_args()
 
+    return args
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    run_time = eval(args.times[0])
     if args.switch_env is not None:
         switch_env = eval(args.switch_env[0])
     else:
         switch_env = False
 
-    run_time = eval(args.times[0])
     version = args.version[0]
     commit_id = args.commit_id[0]
+    test_spark = False
+    test_python = False
+    if args.python is not None:
+        test_python = True
+    if args.spark is not None:
+        test_spark = True
     if switch_env:
-        switch_conda_environment(version, commit_id)
+        status = create_conda_env(version, commit_id=commit_id, is_spark=test_spark, is_gpu=False,
+                                  channel="arctern-dev", conda_label="")
+        if status in [0, 256]:
+            conda_prefix = get_conda_prefix(version + "-" + commit_id)
+            reboot(conda_prefix, sys.argv)
+        else:
+            print("conda env create failed!")
     else:
         if args.file is not None:
             scheduler_file = args.file[0]
         else:
             scheduler_file = "scheduler/gis_only/gis_test.txt"
-        test_spark = False
-        test_python = False
-        if args.python is not None:
-            test_python = True
-        if args.spark is not None:
-            test_spark = True
 
-        run_test(scheduler_file, version + "-" + commit_id, test_spark, test_python)
+        run_test(scheduler_file, version, commit_id, test_spark, test_python)
