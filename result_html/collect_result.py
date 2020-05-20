@@ -36,14 +36,15 @@ def read_file_calculate_time(file):
         return s / (len(total_time) - 1)
 
 
-def order_version_by_built_time(all_commit_id_path, version_build_time):
+def order_version_by_built_time(all_version_commit_id, all_commit_id_path, version_build_time):
     for i in range(len(all_commit_id_path)):
         for j in range(i + 1, len(all_commit_id_path)):
             if version_build_time[i] > version_build_time[j]:
                 version_build_time[i], version_build_time[j] = version_build_time[j], version_build_time[i]
                 all_commit_id_path[i], all_commit_id_path[j] = all_commit_id_path[j], all_commit_id_path[i]
+                all_version_commit_id[i], all_version_commit_id[j] = all_version_commit_id[j], all_version_commit_id[i]
 
-    return all_commit_id_path
+    return all_version_commit_id, all_commit_id_path
 
 
 def extract_all_pref(test_list):
@@ -60,7 +61,9 @@ def extract_all_pref(test_list):
         with open(collect_build_time_file, "r") as collect_time_f:
             file_data = json.load(collect_time_f)
             commit_build_time.append(file_data["build_time"])
-    all_version_commit_id_path = order_version_by_built_time(all_version_commit_id_path, commit_build_time)
+    all_version_commit_id, all_version_commit_id_path = order_version_by_built_time(all_version_commit_id,
+                                                                                    all_version_commit_id_path,
+                                                                                    commit_build_time)
     python_output_path = [os.path.join(commit_id_path, "python") for commit_id_path in all_version_commit_id_path]
     spark_output_path = [os.path.join(commit_id_path, "spark") for commit_id_path in all_version_commit_id_path]
     test_suites = []
