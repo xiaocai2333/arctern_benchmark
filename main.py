@@ -135,23 +135,21 @@ def parse_args():
     args = parse.parse_args()
 
     if args.switch_env is not None:
-        switch_env = eval(args.switch_env[0])
+        args.switch_env =  eval(args.switch_env[0])
     else:
-        switch_env = False
+        args.switch_env =  False
 
-    return
+    return args
 
 
 if __name__ == "__main__":
     args = parse_args()
-
-
     conda_env_file = "conf/arctern_version.conf"
     run_time = eval(args.time[0])
     if eval(args.copy_conf[0]):
         os.system("rm gen_html/version_build_time.txt")
 
-    if switch_env:
+    if args.switch_env:
         create_conda_env(conda_env_file)
     else:
         if args.file is not None:
@@ -168,10 +166,6 @@ if __name__ == "__main__":
         commit_id = tag_commit_build_time()
 
         run_test(scheduler_file, commit_id, test_spark, test_python)
-
-        with open(conda_env_file, "r") as f:
-            if f.readline() != "":
-                switch_conda_environment(conda_env_file)
 
         test_list = []
         if test_python:
