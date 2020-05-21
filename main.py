@@ -18,7 +18,7 @@ import os
 import sys
 import subprocess
 
-from conda_conf import create_conda_env, get_conda_prefix, extract_arctern_build_info, hehe
+from conda_conf import create_conda_env, get_conda_prefix, extract_arctern_build_info
 from python_benchmark import python_test
 
 
