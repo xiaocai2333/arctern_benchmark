@@ -12,30 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys, os, subprocess
+import os, subprocess
 
 __all__ = [
     "create_conda_env",
     "get_conda_prefix",
-    "extract_arctern_build_info",
 ]
-
-
-def extract_arctern_build_info():
-    import arctern
-    import re
-
-    version_info = arctern.version().split("\n")
-    build_time = ""
-    commit_id = sys.prefix.replace("\n", "").split("/")[-1]
-    for info in version_info:
-        if re.search("build time", info):
-            build_time = info.replace("build time : ", "")
-
-    build_info = {"build_time": build_time,
-                  "commit_id": commit_id}
-
-    return build_info
 
 
 def create_conda_env(version, commit_id="", is_spark=False, is_gpu=False, channel="arctern-dev", conda_label=""):
@@ -79,10 +61,3 @@ def get_conda_prefix(conda_env_name):
     conda_prefix = subprocess.check_output("conda env list | grep %s" % conda_env_name, shell=True).decode(
         'utf-8').split(" ")[-1].replace("\n", "")
     return conda_prefix
-
-
-def hehe(conda_prefix):
-
-    exec_python_path = conda_prefix + "/bin/python"
-    os.execlp(exec_python_path, "arctern test", *sys.argv)
-    sys.exit(0)
