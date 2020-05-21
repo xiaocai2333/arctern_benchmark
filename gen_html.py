@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import os
 from result_html import collect_result
 
@@ -57,8 +58,22 @@ def gen_html():
         read_and_replace(data_file, mode, template_path, output_file)
 
 
+def parse_args():
+    parse = argparse.ArgumentParser()
+    parse.add_argument('--python', dest="python", nargs='*')
+    parse.add_argument('--spark', dest="spark", nargs='*')
+    args = parse.parse_args()
+
+    return args
+
+
 if __name__ == "__main__":
-    test_list = ["python", "spark"]
+    args = parse_args()
+    test_list = []
+    if args.spark is not None:
+        test_list.append("spark")
+    if args.python is not None:
+        test_list.append("python")
     collect_result.gen_data_path(test_list)
     gen_html()
 

@@ -114,8 +114,12 @@ def parse_args():
     parse.add_argument('-v --version', dest='version', nargs=1)
     parse.add_argument('--commit_id', dest='commit_id', nargs=1)
     parse.add_argument('--gpu', dest='gpu', nargs='*')
-
     args = parse.parse_args()
+
+    if args.switch_env is not None:
+        args.switch_env = eval(args.switch_env[0])
+    else:
+        args.switch_env = False
 
     return args
 
@@ -123,10 +127,6 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     run_time = eval(args.times[0])
-    if args.switch_env is not None:
-        switch_env = eval(args.switch_env[0])
-    else:
-        switch_env = False
 
     version = args.version[0]
     commit_id = args.commit_id[0]
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         test_python = True
     if args.spark is not None:
         test_spark = True
-    if switch_env:
+    if args.switch_env:
         status = create_conda_env(version, commit_id=commit_id, is_spark=test_spark, is_gpu=False,
                                   channel="arctern-dev", conda_label="")
         if status in [0, 256]:
