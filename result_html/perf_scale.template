@@ -2,7 +2,7 @@
 <html>
 
 <head>
-	<title>GIS Functions Scaling</title>
+	<title>Arctern Benchmark</title>
 
 	<script src="./charts/Chart.js"></script>
 	<script src="./charts/utils.js"></script>

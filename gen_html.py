@@ -14,7 +14,7 @@
 
 import argparse
 import os
-from result_html import collect_result
+from collect_result import gen_data_path
 
 REP_KEYS_MAP = {
     "perf": ('ROWS', 'REP_SET_NAMES', 'REP_DATASETS', 'REP_FUNC_NAMES'),
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         test_list.append("spark")
     if args.python is not None:
         test_list.append("python")
-    collect_result.gen_data_path(test_list)
+    gen_data_path(test_list)
     gen_html()
 
 
